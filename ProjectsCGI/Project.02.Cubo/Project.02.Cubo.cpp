@@ -11,25 +11,40 @@
 
 #include "ogldev_math_3d.h"
 
+// Initializing some global variables
+
+//  connections between local objects on CPU with GPU format
 GLuint VAO;             // Vertex Array Object
 GLuint VBO;             // Vertex Buffer Object
 GLuint IBO;             // Index Buffer Object
 GLuint gWorldLocation;
 GLint  gScaleLocation;
 
+// Declarations of external files 
 const char* pVSFileName = "shader.vs";
 const char* pFSFileName = "shader.fs";
 
+// -------------- Methods implemented ------------------------
 static void CreateVertexBuffer();
 static void CreateIndexBuffer();
 
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType);
 static void CompileShaders();
 static void RenderSceneCB();
+// -----------------------------------------------------------
 
-
+// Main program ----------------------------------------------
 int main(int argc, char** argv)
 {
+
+// used by random color of cube
+
+#ifdef _WIN64
+    srand(GetCurrentProcessId());
+#else
+    srandom(getpid());
+#endif
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     int width = 1920;
@@ -51,10 +66,13 @@ int main(int argc, char** argv)
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
+    //glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+    //glCullFace(GL_BACK);
+
     CreateVertexBuffer();
     CreateIndexBuffer();
     
-
     CompileShaders();
 
     glutDisplayFunc(RenderSceneCB);
@@ -65,11 +83,54 @@ int main(int argc, char** argv)
 }
 
 
-/* ------- Modules identied on top ---------------------------------------------*/
+/* ------- Methods    ---------------------------------------*/
 
 static void RenderSceneCB()
 {
     glClear(GL_COLOR_BUFFER_BIT);
+    static float Scale = 0.0f;
+
+#ifdef _WIN64
+    Scale += 0.001f;
+#else
+    Scale += 0.02f;
+#endif
+
+    Matrix4f Rotation(cosf(Scale), 0.0f, -sinf(Scale), 0.0f,
+                      0.0f,        1.0f, 0.0f        , 0.0f,
+                      sinf(Scale), 0.0f, cosf(Scale),  0.0f,
+                      0.0f,        0.0f, 0.0f,         1.0f);
+
+    Matrix4f Translation(1.0f, 0.0f, 0.0f, 0.0f,
+                         0.0f, 1.0f, 0.0f, 0.0f,
+                         0.0f, 0.0f, 1.0f, 2.0f,
+                         0.0f, 0.0f, 0.0f, 1.0f);
+
+    float VFOV = 45.0f;
+    float tanHalfVFOV = tanf(ToRadian(VFOV / 2.0f));
+    float d = 1/tanHalfVFOV;
+
+    float ar = (float)1920/ (float)1080;
+
+    printf("Aspect ratio %f\n", ar);
+
+    float NearZ = 1.0f;
+    float FarZ = 100.0f;
+
+    float zRange = NearZ - FarZ;
+
+    float A = (-FarZ - NearZ) / zRange;
+    float B = 0.5f * FarZ * NearZ / zRange;
+
+    Matrix4f Projection(d/ar, 0.0f, 0.0f, 0.0f,
+                        0.0f, d,    0.0f, 0.0f,
+                        0.0f, 0.0f, A,    B,
+                        0.0f, 0.0f, 1.0f, 0.0f);
+
+    Matrix4f FinalMatrix = Projection * Translation * Rotation;
+
+    glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &FinalMatrix.m[0][0]);
+
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -78,18 +139,26 @@ static void RenderSceneCB()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+    // color
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     // glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 
+    glutPostRedisplay();
+    
     glutSwapBuffers();
 }
 
 
-
 static void CreateVertexBuffer()
 {
+    
     //Create an object that stores all of the state needed to suppl vertex data
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -108,34 +177,49 @@ static void CreateVertexBuffer()
     *   |  /            | /  p5
     *   p0 ------------ p1 
     */
-    Vertices[0] = Vector3f(-1.0f, -1.0f, 1.0f);   // face - frente p0
-    Vertices[1] = Vector3f(1.0f, -1.0f, 1.0f);    // face - frente p1
-    Vertices[2] = Vector3f(1.0f, 1.0f, 1.0f);     // face - frente p2
-    Vertices[3] = Vector3f(-1.0f, 1.0f, 1.0f);    // face - frente p3
+    float alpha_linear = 0.5; 
+    Vertices[0] = Vector3f(-1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear);   // face - frente p0
+    Vertices[1] = Vector3f(1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear);    // face - frente p1
+    Vertices[2] = Vector3f(1.0f * alpha_linear, 1.0f * alpha_linear, 1.0f * alpha_linear);     // face - frente p2
+    Vertices[3] = Vector3f(-1.0f * alpha_linear, 1.0f * alpha_linear, 1.0f * alpha_linear);    // face - frente p3
 
-    Vertices[4] = Vector3f(-0.75f, -0.75f, -1.0f);   // face - tr�s p4
-    Vertices[5] = Vector3f(0.75f, -0.75f, -1.0f);    // face - tr�s p5
-    Vertices[6] = Vector3f(0.75f, 0.75f, -1.0f);     // face - tr�s p6
-    Vertices[7] = Vector3f(-0.75f, 0.75f, -1.0f);    // face -tr�s  p7
+    Vertices[4] = Vector3f(-0.75f * alpha_linear, -0.75f * alpha_linear, -1.0f * alpha_linear);   // face - tr�s p4
+    Vertices[5] = Vector3f(0.75f * alpha_linear, -0.75f * alpha_linear, -1.0f * alpha_linear);    // face - tr�s p5
+    Vertices[6] = Vector3f(0.75f * alpha_linear, 0.75f * alpha_linear, -1.0f * alpha_linear);     // face - tr�s p6
+    Vertices[7] = Vector3f(-0.75f * alpha_linear, 0.75f * alpha_linear, -1.0f * alpha_linear);    // face -tr�s  p7
 
-    
+
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 }
 
 static void CreateIndexBuffer()
 {
-  unsigned int Indices[] = {    0, 2, 3,
-                                0, 1, 2,
-                                1, 6, 2,
-                                1, 5, 6,
-                                5, 7, 6,
-                                5, 4, 7,
-                                4, 3, 7,
-                                4, 0, 3,
-                                5, 1, 4,
-                                1, 0, 4,
-                                2, 3, 7,
-                                2, 7, 6,
+  unsigned int Indices[] = {    
+                                0,2,1,      // face frente
+                                0,3,2,
+                                0,3,7,      // face lado esquerdo
+                                0,7,4,
+                                4,7,6,      // face de tras
+                                4,6,5,      
+                                5,6,2,      // face lado direito
+                                5,2,1,
+                                2,7,6,      // face de cima
+                                2,3,7,
+                                4,0,1,      // face de baixo
+                                4,1,5
+
+                                // 0, 2, 3,
+                                // 0, 1, 2,
+                                // 1, 6, 2,
+                                // 1, 5, 6,
+                                // 5, 7, 6,
+                                // 5, 4, 7,
+                                // 4, 3, 7,
+                                // 4, 0, 3,
+                                // 5, 1, 4,
+                                // 1, 0, 4,
+                                // 2, 3, 7,
+                                // 2, 7, 6,
                             };
 
   glGenBuffers(1, &IBO);
@@ -212,9 +296,9 @@ static void CompileShaders()
         exit(1);
     }
 
-    gScaleLocation = glGetUniformLocation(ShaderProgram, "gScale");
-    if (gScaleLocation == -1) {
-        printf("Error getting uniform location of 'gScale'\n");
+    gWorldLocation  = glGetUniformLocation(ShaderProgram, "gWorld");
+    if (gWorldLocation  == -1) {
+        printf("Error getting uniform location of 'gWorld'\n");
         exit(1);
     }
 
