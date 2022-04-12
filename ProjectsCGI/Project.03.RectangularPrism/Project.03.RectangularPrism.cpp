@@ -88,10 +88,12 @@ int main(int argc, char** argv)
 static void RenderSceneCB()
 {
     glClear(GL_COLOR_BUFFER_BIT);
-    static float Scale = 0.0f;
+
+    
+static float Scale = 0.0f;
 
 #ifdef _WIN64
-    Scale += 0.0005f;
+    Scale += 0.001f;
 #else
     Scale += 0.02f;
 #endif
@@ -110,7 +112,7 @@ static void RenderSceneCB()
     float tanHalfVFOV = tanf(ToRadian(VFOV / 2.0f));
     float d = 1/tanHalfVFOV;
 
-    float ar = (float)1920/ (float)1080;
+    float ar = (float)1900 / (float)1204;
 
     printf("Aspect ratio %f\n", ar);
 
@@ -120,7 +122,7 @@ static void RenderSceneCB()
     float zRange = NearZ - FarZ;
 
     float A = (-FarZ - NearZ) / zRange;
-    float B = 0.5f * FarZ * NearZ / zRange;
+    float B = 2.0f * FarZ * NearZ / zRange;
 
     Matrix4f Projection(d/ar, 0.0f, 0.0f, 0.0f,
                         0.0f, d,    0.0f, 0.0f,
@@ -131,7 +133,7 @@ static void RenderSceneCB()
 
     glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &FinalMatrix.m[0][0]);
 
-
+  
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 
@@ -155,6 +157,53 @@ static void RenderSceneCB()
     glutSwapBuffers();
 }
 
+struct Vertex{
+    float x;
+    float y;
+    float z;
+};
+struct Face{
+    Vertex coordinates[3];
+};
+    
+    /*
+    *      p6------------- p4
+    *    /  |             / |
+    *   p2 ------------ p0  |
+    *   |   |           |   |
+    *   |   |           |   |
+    *   |   p7--------- | - |
+    *   |  /            | /  p5
+    *   p3 ------------ p1 
+    */
+    // Function to generate cuboide coordinates 
+static void CreateCuboid(Vertex coordinates[8], float length, float height, float depth){
+    //Vertex coordinates[8];
+    Face listFaces[6];
+
+  int signalX = 1;   // negative or positive signal 
+  int signalY = 1;   // negative or positive signal 
+  int signalZ = 1;   // negative or positive signal 
+  
+    for (uint i = 0; i < 4; i++)
+    {
+        
+        if(i / 2 != 0)
+            signalZ = -1;
+         
+        coordinates[2*i].x = length/2.0 * signalX ;
+        coordinates[2*i].y = height/2.0 * signalY ;
+        coordinates[2*i].z = depth/2.0  * signalZ ;
+
+        signalY *= -1;
+        coordinates[2*i+1].x = length/2.0 * signalX ;
+        coordinates[2*i+1].y = height/2.0 * signalY ;
+        coordinates[2*i+1].z = depth/2.0  * signalZ ;
+
+        signalX *= -1;
+        signalY *= -1;
+    }
+}
 
 static void CreateVertexBuffer()
 {
@@ -167,27 +216,30 @@ static void CreateVertexBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     Vector3f Vertices[8];
-    /*
-    *      p7------------- p6
-    *    /  |             / |
-    *   p3 ------------ p2  |
-    *   |   |           |   |
-    *   |   |           |   |
-    *   |   p4--------- | - |
-    *   |  /            | /  p5
-    *   p0 ------------ p1 
-    */
-    float alpha_linear = 0.5; 
-    Vertices[0] = Vector3f(-1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear);   // face - frente p0
-    Vertices[1] = Vector3f(1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear);    // face - frente p1
-    Vertices[2] = Vector3f(1.0f * alpha_linear, 1.0f * alpha_linear, 1.0f * alpha_linear);     // face - frente p2
-    Vertices[3] = Vector3f(-1.0f * alpha_linear, 1.0f * alpha_linear, 1.0f * alpha_linear);    // face - frente p3
+    Vector3f Color[8]; 
+    
+    Vertex rectangularPrism[8];
+    float lengthCuboid = 0.1;
+    float heigthCuboid = 0.8;
+    float depthCuboid = 0.1;
 
-    Vertices[4] = Vector3f(-0.75f * alpha_linear, -0.75f * alpha_linear, -1.0f * alpha_linear);   // face - tr�s p4
-    Vertices[5] = Vector3f(1.25f * alpha_linear, -0.75f * alpha_linear, -1.0f * alpha_linear);    // face - tr�s p5
-    Vertices[6] = Vector3f(1.25f * alpha_linear, 0.75f * alpha_linear, -1.0f * alpha_linear);     // face - tr�s p6
-    Vertices[7] = Vector3f(-0.75f * alpha_linear, 0.75f * alpha_linear, -1.0f * alpha_linear);    // face -tr�s  p7
+    CreateCuboid(rectangularPrism, lengthCuboid, heigthCuboid, depthCuboid);    
 
+    for(int i = 0; i < 8; i++){
+        Vertices[i] = Vector3f(rectangularPrism[i].x, rectangularPrism[i].y, rectangularPrism[i].z );
+        
+        float red = (float)rand() / (float)RAND_MAX;
+        float green = (float)rand() / (float)RAND_MAX;
+        float blue = (float)rand() / (float)RAND_MAX;
+        Color[i] = Vector3f(red, green, blue);
+
+        if (i%2 == 0)
+            Color[i] = Vector3f(0, 35/255.0f, 102/255.0f); // cor azul royal
+        
+        Color[i] = Vector3f(255/255.0f, 127/255.0f, 0); // cor laranja
+        
+        
+    }
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 }
@@ -195,31 +247,18 @@ static void CreateVertexBuffer()
 static void CreateIndexBuffer()
 {
   unsigned int Indices[] = {    
-                                0,2,1,      // face frente
-                                0,3,2,
-                                0,3,7,      // face lado esquerdo
-                                0,7,4,
-                                4,7,6,      // face de tras
-                                4,6,5,      
-                                5,6,2,      // face lado direito
-                                5,2,1,
-                                2,7,6,      // face de cima
-                                2,3,7,
-                                4,0,1,      // face de baixo
-                                4,1,5
-
-                                // 0, 2, 3,
-                                // 0, 1, 2,
-                                // 1, 6, 2,
-                                // 1, 5, 6,
-                                // 5, 7, 6,
-                                // 5, 4, 7,
-                                // 4, 3, 7,
-                                // 4, 0, 3,
-                                // 5, 1, 4,
-                                // 1, 0, 4,
-                                // 2, 3, 7,
-                                // 2, 7, 6,
+                             4,7,6,
+                             7,1,3,
+                             5,0,1,
+                             2,1,0,
+                             6,3,2,
+                             4,2,0,
+                             4,5,7,
+                             7,5,1,
+                             5,4,0,
+                             2,3,1,
+                             6,7,3,
+                             4,6,2,
                             };
 
   glGenBuffers(1, &IBO);
