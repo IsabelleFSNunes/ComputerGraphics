@@ -66,10 +66,9 @@ int main(int argc, char** argv)
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
     glFrontFace(GL_CW);
-    glCullFace(GL_BACK);
+    //glCullFace(GL_BACK);
 
     CreateVertexBuffer();
     CreateIndexBuffer();
