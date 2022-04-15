@@ -10,6 +10,7 @@
 #include <GL/freeglut.h>
 
 #include "ogldev_math_3d.h"
+#include "Cuboide.h"
 
 // Initializing some global variables
 
@@ -54,7 +55,7 @@ int main(int argc, char** argv)
     int x = 200;
     int y = 100;
     glutInitWindowPosition(x, y);
-    int win = glutCreateWindow("Project 02 - Cubo");
+    int win = glutCreateWindow("Project 03 - Rectangular Cube");
     printf("window id: %d\n", win);
 
     // Must be done after glut is initialized!
@@ -66,9 +67,9 @@ int main(int argc, char** argv)
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glFrontFace(GL_CW);
-    //glCullFace(GL_BACK);
+    glCullFace(GL_BACK);
 
     CreateVertexBuffer();
     CreateIndexBuffer();
@@ -157,53 +158,6 @@ static float Scale = 0.0f;
     glutSwapBuffers();
 }
 
-struct Vertex{
-    float x;
-    float y;
-    float z;
-};
-struct Face{
-    Vertex coordinates[3];
-};
-    
-    /*
-    *      p6------------- p4
-    *    /  |             / |
-    *   p2 ------------ p0  |
-    *   |   |           |   |
-    *   |   |           |   |
-    *   |   p7--------- | - |
-    *   |  /            | /  p5
-    *   p3 ------------ p1 
-    */
-    // Function to generate cuboide coordinates 
-static void CreateCuboid(Vertex coordinates[8], float length, float height, float depth){
-    //Vertex coordinates[8];
-    Face listFaces[6];
-
-  int signalX = 1;   // negative or positive signal 
-  int signalY = 1;   // negative or positive signal 
-  int signalZ = 1;   // negative or positive signal 
-  
-    for (uint i = 0; i < 4; i++)
-    {
-        
-        if(i / 2 != 0)
-            signalZ = -1;
-         
-        coordinates[2*i].x = length/2.0 * signalX ;
-        coordinates[2*i].y = height/2.0 * signalY ;
-        coordinates[2*i].z = depth/2.0  * signalZ ;
-
-        signalY *= -1;
-        coordinates[2*i+1].x = length/2.0 * signalX ;
-        coordinates[2*i+1].y = height/2.0 * signalY ;
-        coordinates[2*i+1].z = depth/2.0  * signalZ ;
-
-        signalX *= -1;
-        signalY *= -1;
-    }
-}
 
 static void CreateVertexBuffer()
 {
@@ -215,30 +169,20 @@ static void CreateVertexBuffer()
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    Vector3f Vertices[8];
-    Vector3f Color[8]; 
+    Vector3f Vertices[16];
     
-    Vertex rectangularPrism[8];
+    Vertex listPrism[8];
     float lengthCuboid = 0.1;
     float heigthCuboid = 0.8;
     float depthCuboid = 0.1;
+    Vertex origin;
+    
+    Cuboide Prism(lengthCuboid, heigthCuboid, depthCuboid);
+    origin.x = 0.5; origin.y = 0.5; origin.z = 0.5;
+    Prism.Dimensions(listPrism, origin);
 
-    CreateCuboid(rectangularPrism, lengthCuboid, heigthCuboid, depthCuboid);    
-
-    for(int i = 0; i < 8; i++){
-        Vertices[i] = Vector3f(rectangularPrism[i].x, rectangularPrism[i].y, rectangularPrism[i].z );
-        
-        float red = (float)rand() / (float)RAND_MAX;
-        float green = (float)rand() / (float)RAND_MAX;
-        float blue = (float)rand() / (float)RAND_MAX;
-        Color[i] = Vector3f(red, green, blue);
-
-        if (i%2 == 0)
-            Color[i] = Vector3f(0, 35/255.0f, 102/255.0f); // cor azul royal
-        
-        Color[i] = Vector3f(255/255.0f, 127/255.0f, 0); // cor laranja
-        
-        
+    for(int i = 0; i < 8 ; i++){
+        Vertices[i] = Vector3f(listPrism[i].x, listPrism[i].y, listPrism[i].z );
     }
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
