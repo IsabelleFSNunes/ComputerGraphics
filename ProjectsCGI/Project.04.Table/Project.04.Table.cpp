@@ -10,6 +10,7 @@
 #include <GL/freeglut.h>
 
 #include "ogldev_math_3d.h"
+#include "Cuboide.h"
 
 // Initializing some global variables
 
@@ -47,14 +48,15 @@ int main(int argc, char** argv)
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    int width = 1920;
-    int height = 1080;
+    int width = 1080;
+    int height = 840;
     glutInitWindowSize(width, height);
 
-    int x = 200;
-    int y = 100;
+    int x = 0.1*width;
+    int y = 0.1*height;
+
     glutInitWindowPosition(x, y);
-    int win = glutCreateWindow("Project 02 - Cubo");
+    int win = glutCreateWindow("Project 03 - Rectangular Cube");
     printf("window id: %d\n", win);
 
     // Must be done after glut is initialized!
@@ -89,29 +91,23 @@ static void RenderSceneCB()
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // static float Scale = 3.8f;
-    static float Scale = 0.0f;
-    static float Scaleyz = -0.5f;
+    
+static float Scale = 0.0f;
+
+#ifdef _WIN64
     Scale += 0.001f;
+#else
+    Scale += 0.02f;
+#endif
 
     Matrix4f Rotation(cosf(Scale), 0.0f, -sinf(Scale), 0.0f,
                       0.0f,        1.0f, 0.0f        , 0.0f,
                       sinf(Scale), 0.0f, cosf(Scale),  0.0f,
                       0.0f,        0.0f, 0.0f,         1.0f);
 
-    Matrix4f RotationZ( 1.0f, 0.0f, 0.0f, 0.0f,
-                        0.0f, 1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, cosf(Scaleyz), -sinf(Scaleyz),
-                        0.0f, 0.0f, sinf(Scaleyz), cosf(Scaleyz));
-
-    Matrix4f RotationXY(cosf(Scaleyz), -sinf(Scaleyz), 0.0f, 0.0f,
-                        sinf(Scaleyz), cosf(Scaleyz), 0.0f, 0.0f,
-                        0.0f, 0.0f, 1.0f, 0.0f,
-                        0.0f, 0.0f, 0.0f, 1.0f);
-
     Matrix4f Translation(1.0f, 0.0f, 0.0f, 0.0f,
                          0.0f, 1.0f, 0.0f, 0.0f,
-                         0.0f, 0.0f, 1.0f, 1.0f,
+                         0.0f, 0.0f, 1.0f, 2.0f,
                          0.0f, 0.0f, 0.0f, 1.0f);
 
     float VFOV = 45.0f;
@@ -135,7 +131,7 @@ static void RenderSceneCB()
                         0.0f, 0.0f, A,    B,
                         0.0f, 0.0f, 1.0f, 0.0f);
 
-    Matrix4f FinalMatrix = Projection * Translation * RotationZ;
+    Matrix4f FinalMatrix = Projection * Translation * Rotation;
 
     glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &FinalMatrix.m[0][0]);
 
@@ -152,7 +148,7 @@ static void RenderSceneCB()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
 
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 36*2, GL_UNSIGNED_INT, 0);
     // glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
@@ -163,55 +159,6 @@ static void RenderSceneCB()
     glutSwapBuffers();
 }
 
-struct Vertex{
-    float x;
-    float y;
-    float z;
-    Vector3f color;
-};
-
-    
-    /*
-    *      p6------------- p4
-    *    /  |             / |
-    *   p2 ------------ p0  |
-    *   |   |           |   |
-    *   |   |           |   |
-    *   |   p7--------- | - |
-    *   |  /            | /  p5
-    *   p3 ------------ p1 
-    */
-    // Function to generate cuboide coordinates 
-static void CreateCuboid(Vertex coordinates[8], float length, float height, float depth, Vertex origin){
-    
-
-  int signalX = 1;   // negative or positive signal 
-  int signalY = 1;   // negative or positive signal 
-  int signalZ = 1;   // negative or positive signal 
-  
-    for (uint i = 0; i < 4; i++)
-    {
-        
-        if(i / 2 != 0)
-            signalZ = -1;
-         
-        coordinates[2*i].x = origin.x + length/2.0 * signalX ;
-        coordinates[2*i].y = origin.y + height/2.0 * signalY ;
-        coordinates[2*i].z = origin.z + depth/2.0  * signalZ ;
-
-        signalY *= -1;
-        coordinates[2*i+1].x = origin.x + length/2.0 * signalX ;
-        coordinates[2*i+1].y = origin.y + height/2.0 * signalY ;
-        coordinates[2*i+1].z = origin.z + depth/2.0  * signalZ ;
-
-        signalX *= -1;
-        signalY *= -1;
-
-        //coordinates[2*i].color = Vector3f(0, 0.13, 0.5); // cor
-        //coordinates[2*i+1].color = Vector3f(0, 0, 1.0); // cor    
-
-    }
-}
 
 static void CreateVertexBuffer()
 {
@@ -223,19 +170,37 @@ static void CreateVertexBuffer()
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    Vector3f Vertices[8];
+    Vector3f Vertices[16];
     
-    Vertex rectangularPrism[8];
-    float lengthCuboid = 1;
-    float heigthCuboid = 0.1;
-    float depthCuboid = 1;
+    //Vector3f Color[8]; 
+    
+    Vertex listPrism[8];
+    Vertex listPrism2[8];
+    float lengthCuboid = 0.1;
+    float heigthCuboid = 0.8;
+    float depthCuboid = 0.1;
+    Vertex origin;
+    
+    Cuboide Prism(lengthCuboid, heigthCuboid, depthCuboid);
+    origin.x = 0.5; origin.y = 0.5; origin.z = 0.5;
+    Prism.Dimensions(listPrism, origin);
 
-    Vertex origin; 
-    origin.x = 0; origin.y = 0; origin.z = 0;
-    CreateCuboid(rectangularPrism, lengthCuboid, heigthCuboid, depthCuboid, origin);    
+    // restart the variables
+    float length = 0.1,  heigth = 1.0,  depth = 0.1;
+    origin.x = 0; origin.y = 0; origin.z =0;
+    Cuboide leg1Table(length, heigth, depth);
+    leg1Table.Dimensions(listPrism2, origin);
 
-    for(int i = 0; i < 8; i++){
-        Vertices[i] = Vector3f(rectangularPrism[i].x, rectangularPrism[i].y, rectangularPrism[i].z );        
+    for(int i=0; i < 8; i++){
+        printf("ListPrim2[%d]: x= %f \t y = %f \t z=%f\n", i, listPrism2[i].x, listPrism2[i].y, listPrism2[i].z);
+    }
+
+    for(int i = 0; i < 8 ; i++){
+        // if(i < 8){     // listPrism2
+        Vertices[i] = Vector3f(listPrism[i].x, listPrism[i].y, listPrism[i].z );
+        Vertices[i+8] = Vector3f(listPrism2[i].x, listPrism2[i].y, listPrism2[i].z);
+        printf("Vertices[%d] => x = %f y = %f e z = %f\t", i, Vertices[i].x, Vertices[i].y, Vertices[i].z);
+        printf("Vertices[%d] => x = %f y = %f e z = %f\n", i+8, Vertices[i+8].x, Vertices[i+8].y, Vertices[i+8].z);
     }
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
@@ -243,31 +208,36 @@ static void CreateVertexBuffer()
 
 static void CreateIndexBuffer()
 {
-  unsigned int Indices[] = { 
-                                // 1,5,0,5,4,0,5,6,4,5,7,6,7,2,6,7,3,2,
-                                // 3,0,2,3,1,0,6,2,0,6,0,4,5,3,7,1,3,5,
-                                
-                                1,0,5,5,0,4,5,4,6,5,6,7,7,6,2,7,2,3,
-                                3,2,0,3,0,1,6,0,2,6,4,0,5,7,3,1,5,3,
-                            
-                                 
-                            //      4,7,6,
-                            //  7,1,3,
-                            //  5,0,1,
-                            //  2,1,0,
-                            //  6,3,2,
-                            //  4,2,0,
-                            //  4,5,7,
-                            //  7,5,1,
-                            //  5,4,0,
-                            //  2,3,1,
-                            //  6,7,3,
-                            //  4,6,2,
+  unsigned int Indices[] = {    
+                             4,7,6,
+                             7,1,3,
+                             5,0,1,
+                             2,1,0,
+                             6,3,2,
+                             4,2,0,
+                             4,5,7,
+                             7,5,1,
+                             5,4,0,
+                             2,3,1,
+                             6,7,3,
+                             4,6,2,
                             };
-
+    unsigned int Indices2[72];
+    
+    for( int i = 0; i < 72; i++){
+        if(i < 36)
+            Indices2[i] = Indices[i];
+        else 
+            Indices2[i] = Indices[i-36] + 8;
+    }
+    printf("Indices ------------ \n\n ");
+    for (int i = 0; i < 36; i++)
+    {
+        printf("ListaCubo1[%d] = %d \t ListaCubo2[%i] = %d\n", i, Indices2[i], i+36, Indices2[i+36]);
+    }
   glGenBuffers(1, &IBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices2), Indices2, GL_STATIC_DRAW);
 }
 
 

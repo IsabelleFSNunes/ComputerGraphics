@@ -143,7 +143,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\ogldev_util.cpp" />
+    <ClCompile Include="Cuboide.cpp" />
     <ClCompile Include="Project.04.Table.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Cuboide.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
