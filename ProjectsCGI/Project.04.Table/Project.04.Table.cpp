@@ -25,6 +25,12 @@ GLint  gScaleLocation;
 const char* pVSFileName = "shader.vs";
 const char* pFSFileName = "shader.fs";
 
+// Declarations of global variables
+const int NVERTICES = 8;
+const int NLEGS = 4;
+const int NELEMENTS = 5;
+const int NINDEX = 36;
+
 // -------------- Methods implemented ------------------------
 static void CreateVertexBuffer();
 static void CreateIndexBuffer();
@@ -56,7 +62,7 @@ int main(int argc, char** argv)
     int y = 0.1*height;
 
     glutInitWindowPosition(x, y);
-    int win = glutCreateWindow("Project 03 - Rectangular Cube");
+    int win = glutCreateWindow("Project 04 - Simple Table");
     printf("window id: %d\n", win);
 
     // Must be done after glut is initialized!
@@ -92,46 +98,59 @@ static void RenderSceneCB()
     glClear(GL_COLOR_BUFFER_BIT);
 
     
-static float Scale = 0.0f;
+    static float Scale = 0.01f;
+    static float ScaleY = 2.5f;
+    static float ScaleZ = 0.0f;
+
 
 #ifdef _WIN64
-    Scale += 0.001f;
+    ScaleY += 0.0005f;
 #else
-    Scale += 0.02f;
+    ScaleY += 0.02f;
 #endif
+    Matrix4f RotationX(1.0f, 0.0f, 0.0f, 0.0f,
+                        0.0f, 1.0f, cosf(Scale), sinf(Scale),
+                        0.0f, 0.0f, -sinf(Scale), cosf(Scale),
+                        0.0f, 0.0f, 0.0f, 1.0f);
 
-    Matrix4f Rotation(cosf(Scale), 0.0f, -sinf(Scale), 0.0f,
-                      0.0f,        1.0f, 0.0f        , 0.0f,
-                      sinf(Scale), 0.0f, cosf(Scale),  0.0f,
-                      0.0f,        0.0f, 0.0f,         1.0f);
+    Matrix4f RotationY ( cosf(ScaleY), 0.0f, -sinf(ScaleY), 0.0f,
+                         0.0f, 1.0f, 0.0f, 0.0f,
+                        sinf(ScaleY), 0.0f, cosf(ScaleY), 0.0f,
+                        0.0f, 0.0f, 0.0f, 1.0f);
+
+    Matrix4f RotationZ( cosf(ScaleZ), -sinf(ScaleZ), 0.0f, 0.0f,
+                        sinf(ScaleZ), cosf(ScaleZ), 0.0f,0.0f,
+                        0.0f,0.0f,1.0f,0.0f,
+                        0.0f,0.0f,0.0f,1.0f);
 
     Matrix4f Translation(1.0f, 0.0f, 0.0f, 0.0f,
                          0.0f, 1.0f, 0.0f, 0.0f,
-                         0.0f, 0.0f, 1.0f, 2.0f,
+                         0.0f, 0.0f, 1.0f, 4.0f,
                          0.0f, 0.0f, 0.0f, 1.0f);
 
     float VFOV = 45.0f;
     float tanHalfVFOV = tanf(ToRadian(VFOV / 2.0f));
     float d = 1/tanHalfVFOV;
 
-    float ar = (float)1900 / (float)1204;
+    float ar = (float)1080 / (float)840;
 
     printf("Aspect ratio %f\n", ar);
 
     float NearZ = 1.0f;
-    float FarZ = 100.0f;
+    float FarZ = 10.0f;
 
     float zRange = NearZ - FarZ;
 
     float A = (-FarZ - NearZ) / zRange;
-    float B = 2.0f * FarZ * NearZ / zRange;
+    float B = 4.0f * FarZ * NearZ / zRange;
 
     Matrix4f Projection(d/ar, 0.0f, 0.0f, 0.0f,
                         0.0f, d,    0.0f, 0.0f,
                         0.0f, 0.0f, A,    B,
                         0.0f, 0.0f, 1.0f, 0.0f);
+    
 
-    Matrix4f FinalMatrix = Projection * Translation * Rotation;
+    Matrix4f FinalMatrix = Projection * Translation * RotationX * RotationY;
 
     glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &FinalMatrix.m[0][0]);
 
@@ -148,7 +167,7 @@ static float Scale = 0.0f;
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
 
-    glDrawElements(GL_TRIANGLES, 36*2, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, NINDEX*NELEMENTS, GL_UNSIGNED_INT, 0);
     // glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
@@ -163,6 +182,7 @@ static float Scale = 0.0f;
 static void CreateVertexBuffer()
 {
     
+
     //Create an object that stores all of the state needed to suppl vertex data
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -170,40 +190,60 @@ static void CreateVertexBuffer()
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    Vector3f Vertices[16];
-    
-    //Vector3f Color[8]; 
-    
-    Vertex listPrism[8];
-    Vertex listPrism2[8];
-    float lengthCuboid = 0.1;
-    float heigthCuboid = 0.8;
-    float depthCuboid = 0.1;
+    // Vector with connection with GPU
+    Vector3f Table[(NELEMENTS*NVERTICES)];
+   
+    // Local variables to use in adjusts before send the datas to GPU
+    Vertex topTable[NVERTICES];
+    Vertex legsTable[NLEGS][NVERTICES];
     Vertex origin;
+    float lengthTop, heigthTop, depthTop;
+    float length, heigth, depth;
+
+
+    lengthTop = 1.0; heigthTop = 0.1; depthTop = 1.0;
+    Cuboide Top(lengthTop, heigthTop, depthTop);
+    origin.x = 0; origin.y = 0; origin.z = 0;
+    Top.Dimensions(topTable, origin);
     
-    Cuboide Prism(lengthCuboid, heigthCuboid, depthCuboid);
-    origin.x = 0.5; origin.y = 0.5; origin.z = 0.5;
-    Prism.Dimensions(listPrism, origin);
 
-    // restart the variables
-    float length = 0.1,  heigth = 1.0,  depth = 0.1;
-    origin.x = 0; origin.y = 0; origin.z =0;
+    // restart the variables 
+    length = 0.1,  heigth = 0.8,  depth = 0.1;
     Cuboide leg1Table(length, heigth, depth);
-    leg1Table.Dimensions(listPrism2, origin);
+    Cuboide leg2Table(length, heigth, depth);
+    Cuboide leg3Table(length, heigth, depth);
+    Cuboide leg4Table(length, heigth, depth);
 
-    for(int i=0; i < 8; i++){
-        printf("ListPrim2[%d]: x= %f \t y = %f \t z=%f\n", i, listPrism2[i].x, listPrism2[i].y, listPrism2[i].z);
+    origin.x = topTable[0].x - length/2;  // 0.05 - 0.1/2
+    origin.y = topTable[0].y - heigth/2;  // 0.05 - 1.0/2 = 0
+    origin.z = topTable[0].z - depth /2;   // 0.5 - 0.1/2
+    leg1Table.Dimensions(legsTable[0], origin);
+
+    origin.x = topTable[2].x + length/2; 
+    origin.y = topTable[2].y - heigth/2;
+    origin.z = topTable[2].z - depth/2;
+    leg2Table.Dimensions(legsTable[1], origin);
+    
+    origin.x = topTable[4].x - length/2; 
+    origin.y = topTable[4].y - heigth/2;
+    origin.z = topTable[4].z + depth/2;
+    leg3Table.Dimensions(legsTable[2], origin);
+    
+    origin.x = topTable[6].x + length/2; 
+    origin.y = topTable[6].y - heigth/2;
+    origin.z = topTable[6].z + depth/2;
+    leg4Table.Dimensions(legsTable[3], origin);
+    
+    for(int i = 0; i < NVERTICES ; i++){       
+        Table[i] = Vector3f(topTable[i].x, topTable[i].y, topTable[i].z );
+        for(int j = 0; j < NLEGS; j++){
+            Table[i + (j+1)*NVERTICES] = Vector3f(legsTable[j][i].x, legsTable[j][i].y, legsTable[j][i].z);
+        }
+        // printf("Table[%d] => x = %f y = %f e z = %f\t", i, Table[i].x, Table[i].y, Table[i].z);
+        // printf("Table[%d] => x = %f y = %f e z = %f\n", i+8, Table[i+8].x, Table[i+8].y, Table[i+8].z);
     }
 
-    for(int i = 0; i < 8 ; i++){
-        // if(i < 8){     // listPrism2
-        Vertices[i] = Vector3f(listPrism[i].x, listPrism[i].y, listPrism[i].z );
-        Vertices[i+8] = Vector3f(listPrism2[i].x, listPrism2[i].y, listPrism2[i].z);
-        printf("Vertices[%d] => x = %f y = %f e z = %f\t", i, Vertices[i].x, Vertices[i].y, Vertices[i].z);
-        printf("Vertices[%d] => x = %f y = %f e z = %f\n", i+8, Vertices[i+8].x, Vertices[i+8].y, Vertices[i+8].z);
-    }
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Table), Table, GL_STATIC_DRAW);
 }
 
 static void CreateIndexBuffer()
@@ -222,19 +262,28 @@ static void CreateIndexBuffer()
                              6,7,3,
                              4,6,2,
                             };
-    unsigned int Indices2[72];
+    unsigned int Indices2[NELEMENTS*NINDEX];
     
-    for( int i = 0; i < 72; i++){
-        if(i < 36)
-            Indices2[i] = Indices[i];
-        else 
-            Indices2[i] = Indices[i-36] + 8;
-    }
-    printf("Indices ------------ \n\n ");
-    for (int i = 0; i < 36; i++)
+
+
+    for (int i = 0; i < NELEMENTS; i++)
     {
-        printf("ListaCubo1[%d] = %d \t ListaCubo2[%i] = %d\n", i, Indices2[i], i+36, Indices2[i+36]);
+        for (int j = 0; j < NINDEX; j++)
+        {
+            if(i == 0)
+                Indices2[j] =  Indices[j];
+            else
+                Indices2[i*NINDEX + j] =  Indices[j] + i*NVERTICES;
+        }
+        
     }
+    
+    // printf("Indices ------------ \n\n ");
+    // for (int i = 0; i < 36; i++)
+    // {
+    //     printf("ListaCubo1[%d] = %d \t ListaCubo2[%i] = %d\n", i, Indices2[i], i+36, Indices2[i+36]);
+    // }
+
   glGenBuffers(1, &IBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices2), Indices2, GL_STATIC_DRAW);

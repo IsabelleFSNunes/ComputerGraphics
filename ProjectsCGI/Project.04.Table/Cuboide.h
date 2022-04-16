@@ -30,13 +30,15 @@ public:                        // Access specifier
     float lenght;
     float heigth;
     float depth;
-    float color[N_VERTICES];
+   // float color[N_VERTICES];
 
     Cuboide(float lenght, float heigth, float depth) {
         this->lenght = lenght;
         this->depth = depth;
         this->heigth = heigth;
     };
+
+    void Initialize(float l, float h, float d);
 
     void Dimensions(Vertex coordinates[N_VERTICES], Vertex origin);
 };

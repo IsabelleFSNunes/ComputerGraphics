@@ -1,8 +1,8 @@
 #include "Cuboide.h"
 using namespace std;
 
- 
-   void Cuboide::Dimensions(Vertex coordinates[N_VERTICES], Vertex origin)
+
+void Cuboide::Dimensions(Vertex coordinates[N_VERTICES], Vertex origin)
     {
        int signalX = 1;   // negative or positive signal 
        int signalY = 1;   // negative or positive signal 
