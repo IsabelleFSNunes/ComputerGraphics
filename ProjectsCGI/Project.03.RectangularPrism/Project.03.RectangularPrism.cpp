@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     int x = 200;
     int y = 100;
     glutInitWindowPosition(x, y);
-    int win = glutCreateWindow("Project 03 - Rectangular Cube");
+    int win = glutCreateWindow("Project 03 - Rectangular Prism");
     printf("window id: %d\n", win);
 
     // Must be done after glut is initialized!
@@ -91,13 +91,13 @@ static void RenderSceneCB()
     glClear(GL_COLOR_BUFFER_BIT);
 
     
-static float Scale = 0.0f;
+static float Scale = 0.3f;
 
-#ifdef _WIN64
-    Scale += 0.001f;
-#else
-    Scale += 0.02f;
-#endif
+//#ifdef _WIN64
+//    Scale += 0.001f;
+//#else
+//    Scale += 0.02f;
+//#endif
 
     Matrix4f Rotation(cosf(Scale), 0.0f, -sinf(Scale), 0.0f,
                       0.0f,        1.0f, 0.0f        , 0.0f,
