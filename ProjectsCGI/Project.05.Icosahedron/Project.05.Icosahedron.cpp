@@ -10,9 +10,18 @@
 #include <GL/freeglut.h>
 
 #include "ogldev_math_3d.h"
-#include "Polyedron.h"
+#include "Icosahedron.h"
 
 // Initializing some global variables
+#define ICOSAHEDRON 12
+
+
+struct Vertex {
+    float x;
+    float y;
+    float z;
+    //Vector3f color;
+};
 
 //  connections between local objects on CPU with GPU format
 GLuint VAO;             // Vertex Array Object
@@ -27,7 +36,9 @@ const char* pFSFileName = "shader.fs";
 // Declarations of global variables
 const int NVERTICES = 12;
 const int NELEMENTS = 1;
-const int NINDEX = 60;
+const int NINDEX = 30;
+//int Index[NINDEX];
+//std::vector<int> Indices(30);
 
 // -------------- Methods implemented ------------------------
 static void CreateVertexBuffer();
@@ -36,6 +47,8 @@ static void CreateIndexBuffer();
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType);
 static void CompileShaders();
 static void RenderSceneCB();
+
+void convertVectorVertices(std::vector<float> inputVector[3*NVERTICES], std::vector<Vertex> vectorVertices[NVERTICES]);
 // -----------------------------------------------------------
 
 // Main program ----------------------------------------------
@@ -98,7 +111,7 @@ static void RenderSceneCB()
     
     static float Scale = 0.00f;
     static float ScaleY = 0.5f;
-    static float ScaleZ = 0.0f;
+    static float ScaleZ = 0.5f;
 
 
 #ifdef _WIN64
@@ -165,7 +178,9 @@ static void RenderSceneCB()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
 
-    glDrawElements(GL_LINE_LOOP, 60, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINES, 120, GL_UNSIGNED_INT, 0);
+
+    //glDrawElements(GL_TRIANGLES, 60, GL_UNSIGNED_INT, 0);
     // glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
@@ -192,11 +207,18 @@ static void CreateVertexBuffer()
     Vector3f icosahedroVector[(NELEMENTS*NVERTICES)];        // icosahedron
    
     // Local variables to use in adjusts before send the datas to GPU
-    Polyedron p(1); 
-    Vertex *icosahedroLocalSort = p.Icosahedron();
+    Icosahedron icosahedron(1.0f); // radius
+    std::vector<float> icosahedroLocal(12*3);
+    std::vector<Vertex> icosahedroLocalSort(12);
+    
+
+    icosahedroLocal = icosahedron.computeVertices();
+    convertVectorVertices(&icosahedroLocal, &icosahedroLocalSort);    
+
+   // copy(icosahedron.indices.begin(), icosahedron.indices.end(), Indices.begin()); 
     
     for(int i = 0; i < NVERTICES ; i++){       
-        icosahedroVector[i] = Vector3f(icosahedroLocalSort[i].x, icosahedroLocalSort[i].y, icosahedroLocalSort[i].z );
+        icosahedroVector[i] = Vector3f(icosahedroLocalSort.at(i).x, icosahedroLocalSort.at(i).y, icosahedroLocalSort.at(i).z );
     }
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(icosahedroVector), icosahedroVector, GL_STATIC_DRAW);
@@ -204,36 +226,56 @@ static void CreateVertexBuffer()
 
 static void CreateIndexBuffer()
 {
-  unsigned int Indices[] = {4,0,5,
-                                4,10,0,
-                                10,1,0,
-                                0,1,8,
-                                0,8,5,
+ unsigned int Indices[] = {
+                                // Linhas
+                                0, 1,  1, 2,
+                                0, 2, 2, 3,
+                                0, 3, 3, 4, 
+                                0, 4, 4, 5,
+                                0, 5, 5, 1, 
 
-                                8,9,5,
-                                8,7,9,
-                                1,7,8,
-                                1,6,7,
-                                6,3,7,
+                                11, 10, 10, 9, 
+                                11, 9, 9, 8,
+                                11, 8, 8, 7, 
+                                11, 7, 7, 6,
+                                11, 6, 6, 10,
 
-                                3,9,7,
-                                3,2,9,
-                                3,11,2,
-                                11,4,2,
-                                4,5,2,
+                                1, 5, 1, 6,  
+                                2, 6, 2, 7,
+                                3, 7, 3, 8,
+                                4, 8, 4, 9,
+                                5, 9, 5, 10,
+                                1, 10,
 
-                                2,5,9,
-                                10,4,11,
-                                10,11,6,
-                                10,6,1,
-                                3,6,11,
-                                };
-  //0,1,2,3, 4, 5,6,7, 8,9,10,11
-  //4,5,6,7, 0, 1,2,3, 8,10,9,11 -- meu
-//   unsigned int Indices[][3] = {{0,4,1},{0,9,4}, {9,5,4}, {4,5,8}, {4,8,1},    
-//    {8,10,1}, {8,3,10}, {5,3,8}, {5,2,3}, {2,7,3},    
-//    {7,10,3}, {7,6,10}, {7,11,6}, {11,0,6}, {0,1,6}, 
-//    {6,1,10}, {9,0,11}, {9,11,2}, {9,2,5}, {7,2,11} };
+                                // Triangles - not working very well
+                               /* 0,1,2,
+                                0,2,3,
+                                0,3,4,
+                                0,4,5,
+                                0,5,1,
+
+                                11,10,9,
+                                11,9,8,
+                                11,8,7,
+                                11,7,6,
+                                11,6,10,
+
+                                6,1,5,
+                                7,2,6,
+                                8,3,7,
+                                9,8,4,
+                                10, 5, 9,
+                                10, 1, 5,*/
+
+
+                                                                 
+ };
+
+  /*for (int i = 0; i < 60; i++)
+  {
+      Indices[i] = i;
+  }*/
+
   glGenBuffers(1, &IBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
@@ -325,3 +367,11 @@ static void CompileShaders()
     glUseProgram(ShaderProgram);
 }
 
+void convertVectorVertices(std::vector<float> inputVector[3*NVERTICES], std::vector<Vertex> vectorVertices[NVERTICES]){
+    for(int i = 0; i < 36; i+=3){
+        vectorVertices->at(i/3).x = inputVector->at(i);
+        vectorVertices->at(i/3).y = inputVector->at(i+1);
+        vectorVertices->at(i/3).z = inputVector->at(i+2);
+    }
+    printf("Conversao finalizada...\n");
+}

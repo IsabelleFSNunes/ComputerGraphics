@@ -21,12 +21,12 @@
     <ClCompile Include="..\..\Common\ogldev_util.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
-    <ClCompile Include="Polyedron.cpp">
+    <ClCompile Include="Icosahedron.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Polyedron.h">
+    <ClInclude Include="Icosahedron.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
   </ItemGroup>
