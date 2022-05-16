@@ -106,10 +106,10 @@ public:
         m_camera.Up = Up;
     }
 
-    void SetCamera(const Camera& camera)
-    {
-        SetCamera(camera.GetPos(), camera.GetTarget(), camera.GetUp());
-    }
+    // void SetCamera(const Camera& camera)
+    // {
+    //     SetCamera(camera.GetPos(), camera.GetTarget(), camera.GetUp());
+    // }
 
     void Orient(const Orientation& o)
     {
@@ -120,9 +120,9 @@ public:
 
     void Orient(const WorldTrans& w)
     {
-        m_scale = w.GetScale();
-        m_rotateInfo = w.GetRotation();
-        m_worldPos = w.GetPos();
+        m_scale = w.m_scale;
+        m_rotateInfo = w.m_rotation ;
+        m_worldPos = w.m_pos;
     }
 
     const Matrix4f& GetWPTrans();
