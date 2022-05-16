@@ -144,7 +144,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\Common\ogldev_util.cpp" />
     <ClCompile Include="Icosahedron.cpp" />
-    <ClCompile Include="Project.05.Icosahedron.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Icosahedron.h" />
