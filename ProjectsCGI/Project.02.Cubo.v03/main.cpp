@@ -104,9 +104,9 @@ int main(int argc, char** argv)
     GLclampf Red = 0.0f, Green = 0.0f, Blue = 0.0f, Alpha = 0.0f;
     glClearColor(Red, Green, Blue, Alpha);
 
-    // glEnable(GL_CULL_FACE);
-    // glFrontFace(GL_CW);
-    // glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+    glCullFace(GL_FRONT);
 
     CreateVertexBuffer();
     CreateIndexBuffer();
@@ -234,32 +234,24 @@ static void CreateVertexBuffer()
 
 static void CreateIndexBuffer()
 {
-  unsigned int Indices[] = {    
-                                0,2,1,      // face frente
-                                0,3,2,
-                                0,3,7,      // face lado esquerdo
-                                0,7,4,
-                                4,7,6,      // face de tras
-                                4,6,5,      
-                                5,6,2,      // face lado direito
-                                5,2,1,
-                                2,7,6,      // face de cima
-                                2,3,7,
-                                4,0,1,      // face de baixo
-                                4,1,5
+  unsigned int Indices[] = {   
+                                2,3,0,  // frente
+                                2,0,1,
 
-                                // 0, 2, 3,
-                                // 0, 1, 2,
-                                // 1, 6, 2,
-                                // 1, 5, 6,
-                                // 5, 7, 6,
-                                // 5, 4, 7,
-                                // 4, 3, 7,
-                                // 4, 0, 3,
-                                // 5, 1, 4,
-                                // 1, 0, 4,
-                                // 2, 3, 7,
-                                // 2, 7, 6,
+                                7,4,3, // lado esq
+                                3,4,0,
+
+                                6,5,4,  // tras
+                                7,6,4,
+
+                                6,2,5,  //lado dir
+                                2,1,5,
+
+                                0,4,5, // baixo
+                                1,0,5,
+
+                                3,6,7, // cima
+                                3,2,6
                             };
 
   glGenBuffers(1, &IBO);
