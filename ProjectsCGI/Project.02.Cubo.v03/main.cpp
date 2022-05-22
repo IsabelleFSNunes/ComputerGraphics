@@ -1,4 +1,4 @@
-/*
+    /*
 
         Copyright 2010 Etay Meiri
 
@@ -31,6 +31,31 @@
 
 #define WINDOW_WIDTH  980
 #define WINDOW_HEIGHT 720
+
+struct Vertex {
+    Vector3f pos;
+    Vector3f color;
+
+    Vertex() {}
+
+    Vertex(float x, float y, float z)
+    {
+        pos = Vector3f(x, y, z);
+
+        float red   = (float)rand() / (float)RAND_MAX;
+        float green = (float)rand() / (float)RAND_MAX;
+        float blue  = (float)rand() / (float)RAND_MAX;
+        color = Vector3f(red, green, blue);
+    }
+
+    Vertex(float x, float y, float z, float red, float green, float blue)
+    {
+        pos = Vector3f(x, y, z);
+        color = Vector3f(red, green, blue);
+    }
+};
+
+
 
 GLuint VAO;             // Vertex Array Object
 GLuint VBO;             // Vertex Buffer Object
@@ -105,8 +130,14 @@ int main(int argc, char** argv)
     glClearColor(Red, Green, Blue, Alpha);
 
     glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CW);
+    glFrontFace(GL_CCW);
     glCullFace(GL_FRONT);
+
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
 
     CreateVertexBuffer();
     CreateIndexBuffer();
@@ -121,7 +152,7 @@ int main(int argc, char** argv)
 
 static void RenderSceneCB()
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     GameCamera.OnRender();
 
@@ -132,7 +163,7 @@ static void RenderSceneCB()
 #endif
 
     CubeWorldTransform.SetPosition(0.0f, 0.0f, 2.0f);
-    CubeWorldTransform.Rotate(0.0f, YRotationAngle, 0.0f);
+    CubeWorldTransform.Rotate(0.01f, YRotationAngle, 0.00f);
     Matrix4f World = CubeWorldTransform.GetMatrix();
 
     Matrix4f View = GameCamera.GetMatrix();
@@ -149,12 +180,12 @@ static void RenderSceneCB()
 
     // position
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
 
     // color
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-
+    
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(0);
@@ -206,7 +237,7 @@ static void CreateVertexBuffer()
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    Vector3f Vertices[8];
+    Vertex Vertices[8];
     /*
     *      p7------------- p6
     *    /  |             / |
@@ -218,15 +249,23 @@ static void CreateVertexBuffer()
     *   p0 ------------ p1 
     */
     float alpha_linear = 0.5; 
-    Vertices[0] = Vector3f(-1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear);   // face - frente p0
-    Vertices[1] = Vector3f(1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear);    // face - frente p1
-    Vertices[2] = Vector3f(1.0f * alpha_linear, 1.0f * alpha_linear, 1.0f * alpha_linear);     // face - frente p2
-    Vertices[3] = Vector3f(-1.0f * alpha_linear, 1.0f * alpha_linear, 1.0f * alpha_linear);    // face - frente p3
-
-    Vertices[4] = Vector3f(-0.75f * alpha_linear, -0.75f * alpha_linear, -1.0f * alpha_linear);   // face - tr�s p4
-    Vertices[5] = Vector3f(1.25f * alpha_linear, -0.75f * alpha_linear, -1.0f * alpha_linear);    // face - tr�s p5
-    Vertices[6] = Vector3f(1.25f * alpha_linear, 0.75f * alpha_linear, -1.0f * alpha_linear);     // face - tr�s p6
-    Vertices[7] = Vector3f(-0.75f * alpha_linear, 0.75f * alpha_linear, -1.0f * alpha_linear);    // face -tr�s  p7
+    Vertices[0] = Vertex(-1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear,
+                            1.0f, 0.0f, 0.0f);   // face - frente p0
+    Vertices[1] = Vertex( 1.0f * alpha_linear, -1.0f * alpha_linear, 1.0f * alpha_linear,
+                            1.0f,  0.0f, 0.0f);    // face - frente p1
+    Vertices[2] = Vertex( 1.0f * alpha_linear,  1.0f * alpha_linear, 1.0f * alpha_linear,
+                            1.0f,  0.0f, 0.0f);     // face - frente p2
+    Vertices[3] = Vertex(-1.0f * alpha_linear,  1.0f * alpha_linear, 1.0f * alpha_linear,
+                            1.0f,  0.0f, 0.0f);    // face - frente p3
+                
+    Vertices[4] = Vertex(-1.0f * alpha_linear, -1.0f * alpha_linear, -1.0f * alpha_linear,
+                            1.0f,  1.0f, 1.0f);   // face - tr�s p4
+    Vertices[5] = Vertex( 1.0f * alpha_linear, -1.0f * alpha_linear, -1.0f * alpha_linear,
+                            1.0f,  1.0f, 1.0f);    // face - tr�s p5
+    Vertices[6] = Vertex( 1.0f * alpha_linear,  1.0f * alpha_linear, -1.0f * alpha_linear,
+                            1.0f,  1.0f, 1.0f);     // face - tr�s p6
+    Vertices[7] = Vertex(-1.0f * alpha_linear,  1.0f * alpha_linear, -1.0f * alpha_linear,
+                            1.0f,  1.0f, 1.0f);    // face -tr�s  p7
 
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
