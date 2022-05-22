@@ -95,6 +95,7 @@ int main(int argc, char** argv)
 
 static void RenderSceneCB()
 {
+
     glClear(GL_COLOR_BUFFER_BIT);
 
     
@@ -150,7 +151,7 @@ static void RenderSceneCB()
                         0.0f, 0.0f, 1.0f, 0.0f);
     
 
-    Matrix4f FinalMatrix = Projection * Translation * RotationX * RotationY;
+    Matrix4f FinalMatrix = Translation;
 
     glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &FinalMatrix.m[0][0]);
 

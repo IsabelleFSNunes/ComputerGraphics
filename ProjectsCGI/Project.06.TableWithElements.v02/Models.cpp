@@ -120,7 +120,7 @@ void Models::createTableIndices(int Indices2[NELEMENTS_TABLE * NINDEX_CUBOID])
       
 }
 
-void Models::createIcosahedroIndexLine(int Indices2[120]){
+void Models::createIcosahedroIndexLine(){
      unsigned int IndicesIcosahedron[] = {
                                 // Linhas
                                 0, 1,  1, 2,
@@ -143,21 +143,6 @@ void Models::createIcosahedroIndexLine(int Indices2[120]){
                                 1, 10,
                                                                  
     };
-}
-
-void Models::createIcosahedroIndexFaces(int Indices2[60]){
-     unsigned int IndicesIcosahedron[] = {
-               0,4,1,   0,9,4,   9,5,4,   4,5,8,  4,8,1,
-               8,10,1,  8,3,10,  5,3,8,   5,2,3,  2,7,3,
-               7,10,3,  7,6,10,  7,11,6,  11,0,6,  0,1,6,
-               6,1,10,  9,0,11,  9,11,2,  9,2,5,  7,2,11                                                                 
-    };
-
-    for (int i = 0; i < 60; i++)
-    {
-        Indices2[i] = IndicesIcosahedron[i];
-    }
-    
 }
 
 void Models:: setIndices(int n, int tam){

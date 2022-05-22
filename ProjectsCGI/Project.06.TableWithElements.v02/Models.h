@@ -1,7 +1,6 @@
 #pragma once
 #include "ogldev_math_3d.h"
 #include "Cuboide.h"
-#include "Icosahedron.h"
 //#include "def.h"
 
 // Declarations of global variables
@@ -31,7 +30,6 @@ public:
     Models(Vertex origin, float color[4]);
     void createTableBuffer(Vector3f Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]);
     void createTableIndices(int Indices2[NELEMENTS_TABLE * NINDEX_CUBOID]);
-    void createIcosahedroIndexLine(int Indices2[120]);
-    void createIcosahedroIndexFaces(int Indices2[60]);
+    void createIcosahedroIndexLine();
     void setIndices(int n, int tam);
 };

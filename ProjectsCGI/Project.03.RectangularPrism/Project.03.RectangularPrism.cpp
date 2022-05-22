@@ -58,6 +58,11 @@ int main(int argc, char** argv)
     int win = glutCreateWindow("Project 03 - Rectangular Prism");
     printf("window id: %d\n", win);
 
+    Vertex pos, target;
+    pos.x = 0.0f; pos.y = 0.0f; pos.z = 0.0f;
+    target.x = 1.0f; target.y = 0.0f; target.z = 0.0f;
+    gluLookAt(pos.x, pos.y, pos.z, target.x, target.y, target.z, 0, 0, 1); // eye(x,y,z), focal(x,y,z), up(x,y,z)
+
     // Must be done after glut is initialized!
     GLenum res = glewInit();
     if (res != GLEW_OK) {
@@ -67,9 +72,9 @@ int main(int argc, char** argv)
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CW);
-    glCullFace(GL_BACK);
+    // glEnable(GL_CULL_FACE);
+    // glFrontFace(GL_CW);
+    // glCullFace(GL_BACK);
 
     CreateVertexBuffer();
     CreateIndexBuffer();
@@ -88,49 +93,44 @@ int main(int argc, char** argv)
 
 static void RenderSceneCB()
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+     glClear(GL_COLOR_BUFFER_BIT);
 
     
-static float Scale = 0.3f;
+    static float angle = 0.00f;
+    static float angleY = 0.5f;
+    static float angleZ = 0.5f;
 
-//#ifdef _WIN64
-//    Scale += 0.001f;
-//#else
-//    Scale += 0.02f;
-//#endif
 
-    Matrix4f Rotation(cosf(Scale), 0.0f, -sinf(Scale), 0.0f,
-                      0.0f,        1.0f, 0.0f        , 0.0f,
-                      sinf(Scale), 0.0f, cosf(Scale),  0.0f,
-                      0.0f,        0.0f, 0.0f,         1.0f);
+#ifdef _WIN64
+    angle += 0.0005f;
+    angleY += 0.0005f;
+    angleZ += 0.0005f;
 
-    Matrix4f Translation(1.0f, 0.0f, 0.0f, 0.0f,
+#else
+    angleY += 0.02f;
+#endif
+    Matrix4f RotationX(1.0f, 0.0f, 0.0f, 0.0f,
+                        0.0f, 1.0f, cosf(angle), sinf(angle),
+                        0.0f, 0.0f, -sinf(angle), cosf(angle),
+                        0.0f, 0.0f, 0.0f, 1.0f);
+
+    Matrix4f RotationY ( cosf(angleY), 0.0f, -sinf(angleY), 0.0f,
                          0.0f, 1.0f, 0.0f, 0.0f,
-                         0.0f, 0.0f, 1.0f, 2.0f,
+                        sinf(angleY), 0.0f, cosf(angleY), 0.0f,
+                        0.0f, 0.0f, 0.0f, 1.0f);
+
+    Matrix4f RotationZ( cosf(angleZ), -sinf(angleZ), 0.0f, 0.0f,
+                        sinf(angleZ), cosf(angleZ), 0.0f,0.0f,
+                        0.0f,0.0f,1.0f,0.0f,
+                        0.0f,0.0f,0.0f,1.0f);
+
+    float scalar = 1.0f;
+    Matrix4f Translation(scalar, 0.0f, 0.0f, 0.0f,
+                         0.0f, scalar, 0.0f, 0.0f,
+                         0.0f, 0.0f, scalar, 0.0f,
                          0.0f, 0.0f, 0.0f, 1.0f);
 
-    float VFOV = 45.0f;
-    float tanHalfVFOV = tanf(ToRadian(VFOV / 2.0f));
-    float d = 1/tanHalfVFOV;
-
-    float ar = (float)1900 / (float)1204;
-
-    printf("Aspect ratio %f\n", ar);
-
-    float NearZ = 1.0f;
-    float FarZ = 100.0f;
-
-    float zRange = NearZ - FarZ;
-
-    float A = (-FarZ - NearZ) / zRange;
-    float B = 2.0f * FarZ * NearZ / zRange;
-
-    Matrix4f Projection(d/ar, 0.0f, 0.0f, 0.0f,
-                        0.0f, d,    0.0f, 0.0f,
-                        0.0f, 0.0f, A,    B,
-                        0.0f, 0.0f, 1.0f, 0.0f);
-
-    Matrix4f FinalMatrix = Projection * Translation * Rotation;
+    Matrix4f FinalMatrix = Translation * RotationZ;
 
     glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &FinalMatrix.m[0][0]);
 
