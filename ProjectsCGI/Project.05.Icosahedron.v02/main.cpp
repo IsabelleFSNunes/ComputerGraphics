@@ -1,5 +1,21 @@
-/*
-* by: @IsabelleFSNunes.   
+    /*
+
+        Copyright 2010 Etay Meiri
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    Tutorial 15 - Camera Rotation With Quaternions
 */
 
 #include <stdio.h>
@@ -10,11 +26,11 @@
 #include <GL/freeglut.h>
 
 #include "ogldev_math_3d.h"
-#include "Icosahedron.h"
+#include "camera.h"
+#include "world_transform.h"
 
-// Initializing some global variables
-#define ICOSAHEDRON 12
-
+#define WINDOW_WIDTH  980
+#define WINDOW_HEIGHT 720
 
 struct Vertex {
     Vector3f pos;
@@ -45,24 +61,30 @@ struct Vertex {
     }
 };
 
-
-//  connections between local objects on CPU with GPU format
-GLuint VAO;             // Vertex Array Object
-GLuint VBO;             // Vertex Buffer Object
-GLuint IBO;             // Index Buffer Object
-GLuint gWorldLocation;
-GLuint ScaleColor; 
-
-// Declarations of external files 
-const char* pVSFileName = "shader.vs";
-const char* pFSFileName = "shader.fs";
-
 // Declarations of global variables
 const int NVERTICES = 12;
 const int NELEMENTS = 1;
 const int NINDEX = 30;
-//int Index[NINDEX];
-//std::vector<int> Indices(30);
+
+GLuint VAO;             // Vertex Array Object
+GLuint VBO;             // Vertex Buffer Object
+GLuint IBO;             // Index Buffer Object
+GLuint gWVPLocation;
+
+WorldTrans CubeWorldTransform;
+Vector3f CameraPos(0.0f, 0.0f, -1.0f);
+Vector3f CameraTarget(0.0f, 0.0f, 1.0f);
+Vector3f CameraUp(0.0f, 1.0f, 0.0f);
+Camera GameCamera(WINDOW_WIDTH, WINDOW_HEIGHT, CameraPos, CameraTarget, CameraUp);
+
+float FOV = 45.0f;
+float zNear = 1.0f;
+float zFar = 100.0f;
+PersProjInfo PersProjInfo = { FOV, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, zNear, zFar };
+
+// Declarations of external files 
+const char* pVSFileName = "shader.vs";
+const char* pFSFileName = "shader.fs";
 
 // -------------- Methods implemented ------------------------
 static void CreateVertexBuffer();
@@ -72,15 +94,16 @@ static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum Shad
 static void CompileShaders();
 static void RenderSceneCB();
 
-void convertVectorVertices(std::vector<float> inputVector[3*NVERTICES], std::vector<Vertex> vectorVertices[NVERTICES]);
+static void SpecialKeyboardCB(int key, int mouse_x, int mouse_y);
+static void KeyboardCB(unsigned char key, int mouse_x, int mouse_y);
+static void PassiveMouseCB(int x, int y);
+static void InitializeGlutCallbacks();
+
 // -----------------------------------------------------------
 
-// Main program ----------------------------------------------
+
 int main(int argc, char** argv)
 {
-
-// used by random color of cube
-
 #ifdef _WIN64
     srand(GetCurrentProcessId());
 #else
@@ -88,17 +111,22 @@ int main(int argc, char** argv)
 #endif
 
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-    int width = 1080;
-    int height = 840;
-    glutInitWindowSize(width, height);
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA);
+    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    int x = 0.1*width;
-    int y = 0.1*height;
-
+    int x = 200;
+    int y = 100;
     glutInitWindowPosition(x, y);
-    int win = glutCreateWindow("Project 05 - Icosahedron");
+    int win = glutCreateWindow("Project 05 - icosahedron with mouse moviments");
     printf("window id: %d\n", win);
+
+    char game_mode_string[64];
+    // Game mode string example: <Width>x<Height>@<FPS>
+    snprintf(game_mode_string, sizeof(game_mode_string), "%dx%d@60", WINDOW_WIDTH, WINDOW_HEIGHT);
+    glutGameModeString(game_mode_string);
+    glutEnterGameMode();
+
+    InitializeGlutCallbacks();
 
     // Must be done after glut is initialized!
     GLenum res = glewInit();
@@ -107,18 +135,22 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    GLclampf Red = 0.0f, Green = 0.0f, Blue = 0.0f, Alpha = 0.0f;
+    glClearColor(Red, Green, Blue, Alpha);
 
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
-    //glCullFace(GL_FRONT);
+
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
 
     CreateVertexBuffer();
     CreateIndexBuffer();
-    
-    CompileShaders();
 
-    glutDisplayFunc(RenderSceneCB);
+    CompileShaders();
 
     glutMainLoop();
 
@@ -126,99 +158,81 @@ int main(int argc, char** argv)
 }
 
 
-/* ------- Methods    ---------------------------------------*/
-
 static void RenderSceneCB()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    
-    static float angle = 0.00f;
-    static float angleY = 0.5f;
-    static float angleZ = 0.25f;
-
+    GameCamera.OnRender();
 
 #ifdef _WIN64
-    angle += 0.0005f;
-    angleY += 0.0005f;
-    angleZ += 0.0005f;
-
+    float YRotationAngle = 0.01f;
 #else
-    angleY += 0.02f;
+    float YRotationAngle = 1.0f;
 #endif
-    Matrix4f RotationX(1.0f, 0.0f, 0.0f, 0.0f,
-                        0.0f, 1.0f, cosf(angle), -sinf(angle),
-                        0.0f, 0.0f, sinf(angle), cosf(angle),
-                        0.0f, 0.0f, 0.0f, 1.0f);
 
-    Matrix4f RotationY ( cosf(angleY), 0.0f, -sinf(angleY), 0.0f,
-                         0.0f, 1.0f, 0.0f, 0.0f,
-                        sinf(angleY), 0.0f, cosf(angleY), 0.0f,
-                        0.0f, 0.0f, 0.0f, 1.0f);
+    CubeWorldTransform.SetPosition(0.0f, 0.0f, 2.0f);
+    CubeWorldTransform.Rotate(0.01f, 0.0f, 0.00f);
+    Matrix4f World = CubeWorldTransform.GetMatrix();
 
-    Matrix4f RotationZ( cosf(angleZ), -sinf(angleZ), 0.0f, 0.0f,
-                        sinf(angleZ), cosf(angleZ), 0.0f,0.0f,
-                        0.0f,0.0f,1.0f,0.0f,
-                        0.0f,0.0f,0.0f,1.0f);
+    Matrix4f View = GameCamera.GetMatrix();
 
-    float scalar = 0.25f;
-    Matrix4f Translation(scalar, 0.0f, 0.0f, 0.0f,
-                         0.0f, scalar, 0.0f, 0.0f,
-                         0.0f, 0.0f, scalar, 0.0f,
-                         0.0f, 0.0f, 0.0f, 1.0f);
+    Matrix4f Projection;
+    Projection.InitPersProjTransform(PersProjInfo);
 
-    // float VFOV = 45.0f;
-    // float tanHalfVFOV = tanf(ToRadian(VFOV / 2.0f));
-    // float d = 1/tanHalfVFOV;
+    Matrix4f WVP = Projection * View * World;
 
-    // float ar = (float)1080 / (float)840;
+    glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, &WVP.m[0][0]);
 
-    // printf("Aspect ratio %f\n", ar);
-
-    // float NearZ = 1.0f;
-    // float FarZ = 100.0f;
-
-    // float zRange = NearZ - FarZ;
-
-    // float A = (-FarZ - NearZ) / zRange;
-    // float B = 6.0f * FarZ * NearZ / zRange;
-
-    // Matrix4f Projection(d/ar, 0.0f, 0.0f, 0.0f,
-    //                     0.0f, d,    0.0f, 0.0f,
-    //                     0.0f, 0.0f, A,    B,
-    //                     0.0f, 0.0f, 1.0f, 0.0f);
-    
-
-    // Matrix4f FinalMatrix = Projection * Translation * RotationX * RotationY;
-    // Matrix4f FinalMatrix = Translation * RotationX * RotationY;
-    Matrix4f FinalMatrix = Translation * RotationY ;
-
-    glUniformMatrix4fv(gWorldLocation, 1, GL_TRUE, &FinalMatrix.m[0][0]);
-
-    // glUniform1d(ScaleColor, 1, GL_TRUE, 1.0f);
-  
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 
+    // position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     // color
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-
-    //glDrawElements(GL_LINES, 120, GL_UNSIGNED_INT, 0);
+    
     glDrawElements(GL_TRIANGLES, 60, GL_UNSIGNED_INT, 0);
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
 
     glutPostRedisplay();
-    
+
     glutSwapBuffers();
 }
 
+static void KeyboardCB(unsigned char key, int mouse_x, int mouse_y)
+{
+    if (key == 'q' || key == 27) {
+        exit(0);
+    }
+
+    GameCamera.OnKeyboard(key);
+}
+
+
+static void SpecialKeyboardCB(int key, int mouse_x, int mouse_y)
+{
+    GameCamera.OnKeyboard(key);
+}
+
+
+static void PassiveMouseCB(int x, int y)
+{
+    GameCamera.OnMouse(x, y);
+}
+
+
+static void InitializeGlutCallbacks()
+{
+    glutDisplayFunc(RenderSceneCB);
+    glutKeyboardFunc(KeyboardCB);
+    glutSpecialFunc(SpecialKeyboardCB);
+    glutPassiveMotionFunc(PassiveMouseCB);
+}
 
 
 static void CreateVertexBuffer()
@@ -248,20 +262,21 @@ static void CreateVertexBuffer()
     Vector3f bluePure = Vector3f(0.0, 0.0, 1.0);
     Vector3f whitePure = Vector3f(1.0, 1.0, 1.0);
 
-    int tri[3] = { 7,6,10 };
+    int tri[3] = { 4,8,1 };
+    int count = 0;
     for(int i = 0; i < NVERTICES ; i++){    
-        if(i == tri[0]){
-            icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, redPure);
+        if(count < 6){
+            icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, bluePure);
         }
-        else if (i == tri[1])
+        /*else if (count % 3 == 1)
             icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, greenPure);
 
-        else if (i == tri[2])
-            icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, bluePure);
+        else if (count % 6 == 2)
+            icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, redPure);*/
 
         else
             icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, whitePure);
-
+        count++;
     }
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(icosahedroVector), icosahedroVector, GL_STATIC_DRAW);
@@ -271,17 +286,15 @@ static void CreateIndexBuffer()
 {
     //Icosahedron icosahedron2(0.5f); // radius
     unsigned int Indices[60]{
-               0,4,1, 0,9,4, 9,5,4, 4,5,8, 4,8,1,
+               0,4,1, 9,4,0, 5,4,9, 4,5,8, 4,8,1,
                8,10,1, 8,3,10, 5,3,8, 5,2,3, 2,7,3,
                7,10,3, 7,6,10, 7,11,6, 11,0,6, 0,1,6,
-               6,1,10, 9,0,11, 9,11,2, 9,2,5, 11,7,2 };
-
-
+               6,1,10, 9,0,11, 9,11,2, 5,9,2, 7,2,11 };
+    // 2,9,5    2,5,9    9,5,2  9,2,5  5,9,2
     glGenBuffers(1, &IBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
 }
-
 
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
@@ -351,9 +364,9 @@ static void CompileShaders()
         exit(1);
     }
 
-    gWorldLocation  = glGetUniformLocation(ShaderProgram, "gWorld");
-    if (gWorldLocation  == -1) {
-        printf("Error getting uniform location of 'gWorld'\n");
+    gWVPLocation = glGetUniformLocation(ShaderProgram, "gWVP");
+    if (gWVPLocation == -1) {
+        printf("Error getting uniform location of 'gWVP'\n");
         exit(1);
     }
 
