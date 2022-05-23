@@ -24,20 +24,43 @@
 class Camera
 {
 public:
-    Camera();
-    Camera(const Vector3f& Pos, const Vector3f& Target, const Vector3f& Up);
-    void OnKeyboard(unsigned char Key);
-    Matrix4f GetMatrix();
+
+    Camera(int WindowWidth, int WindowHeight);
+
+    Camera(int WindowWidth, int WindowHeight, const Vector3f& Pos, const Vector3f& Target, const Vector3f& Up);
+
     void SetPosition(float x, float y, float z);
 
-    const Vector3f& GetPos() const;
-    const Vector3f& GetTarget() const;
-    const Vector3f& GetUp() const;
+    void OnKeyboard(unsigned char key);
+
+    void OnMouse(int x, int y);
+
+    void OnRender();
+
+    Matrix4f GetMatrix();
 
 private:
+
+    void Init();
+    void Update();
+
     Vector3f m_pos;
     Vector3f m_target;
     Vector3f m_up;
-    float m_speed = 0.1f;
+    float m_speed = 1.0f;
+
+    int m_windowWidth;
+    int m_windowHeight;
+
+    float m_AngleH;
+    float m_AngleV;
+
+    bool m_OnUpperEdge;
+    bool m_OnLowerEdge;
+    bool m_OnLeftEdge;
+    bool m_OnRightEdge;
+
+    Vector2i m_mousePos;
 };
-#endif
+
+#endif  /* CAMERA_H */

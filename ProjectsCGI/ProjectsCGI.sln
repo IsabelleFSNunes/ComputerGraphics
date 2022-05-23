@@ -25,6 +25,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Project.06.TableWithElement
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Project.05.Icosahedron.v02", "Project.05.Icosahedron.v02\Project.05.Icosahedron.v02.vcxproj", "{E696689E-4D52-4F46-BB23-F9A93D480E12}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{BF402CF6-F350-49C2-AC4A-EF7F0B60AABF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

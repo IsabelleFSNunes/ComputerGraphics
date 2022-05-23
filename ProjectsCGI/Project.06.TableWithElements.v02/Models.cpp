@@ -87,7 +87,7 @@ void Models::createTableIndices(int Indices2[NELEMENTS_TABLE * NINDEX_CUBOID])
     this->Indices = Indices2;
 
     int IndicesCuboid[] = {    
-                              4,7,6,
+                               4,7,6,
                              7,1,3,
                              5,0,1,
                              2,1,0,
@@ -120,8 +120,60 @@ void Models::createTableIndices(int Indices2[NELEMENTS_TABLE * NINDEX_CUBOID])
       
 }
 
-void Models::createIcosahedroIndexLine(){
-     unsigned int IndicesIcosahedron[] = {
+void Models::createIcosahedroBuffer(){
+    float scale = 0.25f;
+    float X = 0.525731112119133606 * scale;
+    float Z = .850650808352039932 * scale;
+
+    static Vector3f vdata[NVERTICES_ICO] = {
+       {-X, 0.0, Z}, {X, 0.0, Z}, {-X, 0.0, -Z}, {X, 0.0, -Z},
+       {0.0, Z, X}, {0.0, Z, -X}, {0.0, -Z, X}, {0.0, -Z, -X},
+       {Z, X, 0.0}, {-Z, X, 0.0}, {Z, -X, 0.0}, {-Z, -X, 0.0}
+    };
+    // int tri[3] = { 4,8,1 };
+    // for(int i = 0; i < NVERTICES_ICO; i++){
+    //     icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z);
+    // }
+    // Vector3f redPure = Vector3f(1.0, 0.0, 0.0);
+    // Vector3f greenPure = Vector3f(0.0, 1.0, 0.0);
+    // Vector3f bluePure = Vector3f(0.0, 0.0, 1.0);
+    // Vector3f whitePure = Vector3f(1.0, 1.0, 1.0);
+
+    // int tri[3] = { 4,8,1 };
+    // for(int i = 0; i < NVERTICES ; i++){    
+    //     if(i == tri[0]){
+    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, redPure);
+    //     }
+    //     else if (i == tri[1])
+    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, greenPure);
+
+    //     else if (i == tri[2])
+    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, bluePure);
+
+    //     else
+    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, whitePure);
+
+    // }
+
+    this->Buffer = (Vector3f *)calloc(NVERTICES_ICO, sizeof(Vector3f));
+    if (!this->Buffer) {
+        cout << "Memory Allocation Failed";
+        exit(1);
+    }
+    else {
+        int i;
+        for (i = 0; i < NVERTICES_ICO; i++)
+        {
+            *this->Buffer = vdata[i];
+            this->Buffer++;
+        }
+        this->Buffer -= i;
+    }
+
+}
+
+void Models::createIcosahedroIndexLine(int Indices2[62]){
+     int IndicesIcosahedron[] = {
                                 // Linhas
                                 0, 1,  1, 2,
                                 0, 2, 2, 3,
@@ -143,6 +195,48 @@ void Models::createIcosahedroIndexLine(){
                                 1, 10,
                                                                  
     };
+      this->Indices = (int *)calloc(62, sizeof(int));
+    if (!this->Indices) {
+        cout << "Memory Allocation Failed";
+        exit(1);
+    }
+    else {
+        int i;
+        for (i = 0; i < 62; i++)
+        {
+            Indices2[i] = IndicesIcosahedron[i];
+            *this->Indices =IndicesIcosahedron[i];
+            this->Indices++;
+        }
+        this->Indices -= i;
+    }
+}
+
+void Models::createIcosahedroIndexFaces(int Indices2[60]){
+    int IndicesIcosahedron[] = {
+               0,4,1,   0,9,4,   9,5,4,   4,5,8,  4,8,1,
+               8,10,1,  8,3,10,  5,3,8,   5,2,3,  2,7,3,
+               7,10,3,  7,6,10,  7,11,6,  11,0,6,  0,1,6,
+               6,1,10,  9,0,11,  9,11,2,  9,2,5,  7,2,11                                                                 
+    };
+
+
+    this->Indices = (int *)calloc(60, sizeof(int));
+    if (!this->Indices) {
+        cout << "Memory Allocation Failed";
+        exit(1);
+    }
+    else {
+        int i;
+        for (i = 0; i < 60; i++)
+        {
+            Indices2[i] = IndicesIcosahedron[i];
+            *this->Indices =IndicesIcosahedron[i];
+            this->Indices++;
+        }
+        this->Indices -= i;
+    }
+    
 }
 
 void Models:: setIndices(int n, int tam){

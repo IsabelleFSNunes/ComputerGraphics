@@ -1,6 +1,22 @@
-/*
-* by: @IsabelleFSNunes.   
-*/	
+    /*
+
+        Copyright 2010 Etay Meiri
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    Tutorial 15 - Camera Rotation With Quaternions
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -12,25 +28,48 @@
 #include "ogldev_math_3d.h"
 #include "camera.h"
 #include "world_transform.h"
-#include "ogldev_pipeline.h"
-#include "ogldev_glut_backend.h"
 #include "Models.h"
 
-// Initializing some global variables
+#define WINDOW_WIDTH  980
+#define WINDOW_HEIGHT 720
 
-//  connections between local objects on CPU with GPU format
+// struct Vertex_ {
+//     Vector3f pos;
+//     Vector3f color;
+
+//     Vertex_() {}
+
+//     Vertex_(float x, float y, float z)
+//     {
+//         pos = Vector3f(x, y, z);
+
+//         float red   = (float)rand() / (float)RAND_MAX;
+//         float green = (float)rand() / (float)RAND_MAX;
+//         float blue  = (float)rand() / (float)RAND_MAX;
+//         color = Vector3f(red, green, blue);
+//     }
+
+//     Vertex_(float x, float y, float z, float red, float green, float blue)
+//     {
+//         pos = Vector3f(x, y, z);
+//         color = Vector3f(red, green, blue);
+//     }
+
+//     Vertex_(float x, float y, float z, Vector3f cor)
+//     {
+//         pos = Vector3f(x, y, z);
+//         color = Vector3f(cor);
+//     }
+// };
+
 GLuint VAO;             // Vertex Array Object
 GLuint VBO;             // Vertex Buffer Object
 GLuint IBO;             // Index Buffer Object
-GLuint gWVPLocation;
 
-// Declarations of external files 
-const char* pVSFileName = "shader.vs";
-const char* pFSFileName = "shader.fs";
+GLuint VBO2;             // Vertex Buffer Object
+GLuint IBO2;             // Index Buffer Object
 
-// To manipulate camera with mouse
-Camera* pGameCamera;
-PersProjInfo gPersProjInfo;
+GLuint gWVP;
 
 WorldTrans CubeWorldTransform;
 Vector3f CameraPos(0.0f, 0.0f, -1.0f);
@@ -43,29 +82,28 @@ float zNear = 1.0f;
 float zFar = 100.0f;
 PersProjInfo PersProjInfo = { FOV, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, zNear, zFar };
 
-
-#define tam NELEMENTS_TABLE * NINDEX_CUBOID
-int a;
+// Declarations of external files 
+const char* pVSFileName = "shader.vs";
+const char* pFSFileName = "shader.fs";
 
 // -------------- Methods implemented ------------------------
-static void CreateVertexBuffer(Models m);
-static void CreateIndexBuffer(Models m, int nShift);
+static void CreateVertexBuffer(Vector3f *array, int tam, int n);
+static void CreateIndexBuffer(int *Indices, int tam, int n);
 
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType);
 static void CompileShaders();
 static void RenderSceneCB();
 
-static void _SpecialKeyboardCB(int Key, int x, int y);
+static void SpecialKeyboardCB(int key, int mouse_x, int mouse_y);
+static void KeyboardCB(unsigned char key, int mouse_x, int mouse_y);
+static void PassiveMouseCB(int x, int y);
 static void InitializeGlutCallbacks();
 
 // -----------------------------------------------------------
 
-// Main program ----------------------------------------------
+
 int main(int argc, char** argv)
 {
-
-// used by random color of cube
-
 #ifdef _WIN64
     srand(GetCurrentProcessId());
 #else
@@ -82,16 +120,16 @@ int main(int argc, char** argv)
     int y = 0.1*height;
 
     glutInitWindowPosition(x, y);
-
-    int win = glutCreateWindow("Project 06. v2 - Table with icosahedron");
+    int win = glutCreateWindow("Project 06 - Table with other elements");
     printf("window id: %d\n", win);
 
-    InitializeGlutCallbacks();
+    char game_mode_string[64];
+    // Game mode string example: <Width>x<Height>@<FPS>
+    snprintf(game_mode_string, sizeof(game_mode_string), "%dx%d@60", WINDOW_WIDTH, WINDOW_HEIGHT);
+    glutGameModeString(game_mode_string);
+    glutEnterGameMode();
 
-    Vector3f CameraPos(0.0f, 0.0f, -1.0f);
-    Vector3f CameraTarget(0.0f, 0.0f, 1.0f);
-    Vector3f CameraUp(0.0f, 1.0f, 0.0f);
-    Camera GameCamera(width, height, CameraPos, CameraTarget, CameraUp);    
+    InitializeGlutCallbacks();
 
     // Must be done after glut is initialized!
     GLenum res = glewInit();
@@ -100,34 +138,49 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    GLclampf Red = 0.0f, Green = 0.0f, Blue = 0.0f, Alpha = 0.0f;
+    glClearColor(Red, Green, Blue, Alpha);
 
-    //glEnable(GL_CULL_FACE);
-    //glFrontFace(GL_CW);
-    //glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
 
-    Vertex originTable;
-    originTable.x = 0.0; originTable.y = 0.0; originTable.z = 0.0;
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
+
+    // Mesa ---------------------------------------------------------------------------------
+    Vertex tableOrigin;
+    int obj = 1;
+    tableOrigin.x = 0.0; tableOrigin.y = -1.0; tableOrigin.z = 0.0;
+    float c2[] = { 0.0, 1.0, 0.0, 0.0 };
+    Models table(tableOrigin, c2);
+    Vector3f arrayTable[NELEMENTS_TABLE * NVERTICES_CUBOIDE];
+    int arrayTableIndex[NELEMENTS_TABLE * NINDEX_CUBOID];
+    table.createTableBuffer(arrayTable);
+    for (int i = 0; i < NELEMENTS_TABLE * NVERTICES_CUBOIDE; i++)
+        arrayTable[i] = table.Buffer[i];
+    CreateVertexBuffer(arrayTable, NELEMENTS_TABLE * NVERTICES_CUBOIDE, obj);
+    table.createTableIndices(arrayTableIndex);
+    CreateIndexBuffer(table.Indices, NELEMENTS_TABLE * NINDEX_CUBOID, obj);
+
+    // Icosaedro-----------------------------------------------------------------------------
+    Vertex icoOrigin;
+    obj = 2;
+    icoOrigin.x = 0.0; icoOrigin.y = 0.0; icoOrigin.z = 0.0;
     float c[] = {1.0, 0.0, 0.0, 0.0};
-    
-    // Models table(originTable, c);
-    // CreateVertexBuffer(table);
-    // CreateIndexBuffer(table, 0);
-    
-
-    Models ico(originTable, c);
-    CreateVertexBuffer(ico);
-    CreateIndexBuffer(ico, 0);
+    Models ico(icoOrigin, c);
+    Vector3f arrayIco[NVERTICES_ICO];
+    int arrayIcoIndex[60];
+    ico.createIcosahedroBuffer();
+    for (int i = 0; i < NVERTICES_ICO; i++)
+        arrayIco[i] = ico.Buffer[i];
+    CreateVertexBuffer(arrayIco, NVERTICES_ICO, obj);
+    ico.createIcosahedroIndexFaces(arrayIcoIndex);
+    CreateIndexBuffer(ico.Indices, 60, obj);
 
     CompileShaders();
-
-    gPersProjInfo.FOV = 60.0f;
-    gPersProjInfo.Height = height;
-    gPersProjInfo.Width = width;
-    gPersProjInfo.zNear = 1.0f;
-    gPersProjInfo.zFar = 100.0f;
-
-    // glutDisplayFunc(RenderSceneCB);
 
     glutMainLoop();
 
@@ -135,103 +188,174 @@ int main(int argc, char** argv)
 }
 
 
-/* ------- Methods    ---------------------------------------*/
-
-static void _SpecialKeyboardCB(int Key, int x, int y)
+static void RenderSceneCB()
 {
-    OGLDEV_KEY OgldevKey = GLUTKeyToOGLDEVKey(Key);
-    pGameCamera->OnKeyboard(OgldevKey);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    GameCamera.OnRender();
+
+#ifdef _WIN64
+    float YRotationAngle = 0.01f;
+#else
+    float YRotationAngle = 1.0f;
+#endif
+
+    // CubeWorldTransform.SetPosition(0.0f, 0.0f, 2.0f);
+    // CubeWorldTransform.Rotate(0.0f, YRotationAngle, 0.00f);
+    // Matrix4f World = CubeWorldTransform.GetMatrix();
+
+    Matrix4f View = GameCamera.GetMatrix();
+
+    Matrix4f Projection;
+    Projection.InitPersProjTransform(PersProjInfo);
+
+    // Matrix4f WVP = Projection * View * World;
+
+    // glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
+
+    
+    
+    // position
+     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+ glEnableVertexAttribArray(0);
+     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  
+     CubeWorldTransform.SetPosition(0.0f, 0.0f, 0.0f);
+     Matrix4f World = CubeWorldTransform.GetMatrix();
+     CubeWorldTransform.SetScale(0.5);
+    Matrix4f WVP = World * View;
+     glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
+    
+     glDrawElements(GL_TRIANGLES, NELEMENTS_TABLE * NINDEX_CUBOID , GL_UNSIGNED_INT, 0); // table
+ glDisableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO2);
+    
+glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE, 0, 0);
+    CubeWorldTransform.SetPosition(0.0f, 0.5f, 0.0f);
+    CubeWorldTransform.SetScale(0.5);
+    Matrix4f World2 = CubeWorldTransform.GetMatrix();
+    WVP = World2*View;
+    glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
+    
+    glDrawElements(GL_TRIANGLES, 60 , GL_UNSIGNED_INT, 0); //
+glDisableVertexAttribArray(0);
+//     // color
+    // glEnableVertexAttribArray(1);
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+ 
+    // glDisableVertexAttribArray(1);
+
+    glutPostRedisplay();
+
+    glutSwapBuffers();
 }
+
+static void KeyboardCB(unsigned char key, int mouse_x, int mouse_y)
+{
+    if (key == 'q' || key == 27) {
+        exit(0);
+    }
+
+    GameCamera.OnKeyboard(key);
+}
+
+
+static void SpecialKeyboardCB(int key, int mouse_x, int mouse_y)
+{
+    GameCamera.OnKeyboard(key);
+}
+
+
+static void PassiveMouseCB(int x, int y)
+{
+    GameCamera.OnMouse(x, y);
+}
+
 
 static void InitializeGlutCallbacks()
 {
     glutDisplayFunc(RenderSceneCB);
-    glutIdleFunc(RenderSceneCB);
-    glutSpecialFunc(_SpecialKeyboardCB);
+    glutKeyboardFunc(KeyboardCB);
+    glutSpecialFunc(SpecialKeyboardCB);
+    glutPassiveMotionFunc(PassiveMouseCB);
 }
 
 
-static void RenderSceneCB()
+static void CreateVertexBuffer(Vector3f *array, const int tam, int n)
 {
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    static float Scale = 0.1f;
-#ifdef _WIN64
-    Scale += 0.001f;
-#else
-    Scale += 0.02f;
-#endif
-    Vector3f CameraPos(0.0f, 0.0f, -1.0f);
-    Vector3f CameraTarget(0.0f, 0.0f, 1.0f);
-    Vector3f CameraUp(0.0f, 1.0f, 0.0f);
-
-    Pipeline p;
-    p.Rotate(0.0f, Scale, 0.0f);
-    p.WorldPos(0.0f, 0.0f, 3.0f);
-    p.SetCamera(CameraPos, CameraTarget, CameraUp);
-    p.SetPerspectiveProj(gPersProjInfo);
-
-    glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    //color
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-
-    glDrawElements(GL_TRIANGLES, 60, GL_UNSIGNED_INT, 0);
-    // glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-
-    // glutPostRedisplay();
     
-    glutSwapBuffers();
+    if(n == 1){
+        Vector3f arrayAux[NELEMENTS_TABLE * NVERTICES_CUBOIDE];
+    
+        for (int i = 0; i < tam; i++){
+            arrayAux[i] = *array;
+            array++;
+        }
+
+        int size = sizeof(Vector3f)* tam;
+        //Create an object that stores all of the state needed to suppl vertex data
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+        glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
+    }
+    else{
+        Vector3f arrayAux[12];
+    
+        for (int i = 0; i < tam; i++){
+            arrayAux[i] = *array;
+            array++;
+        }
+
+        int size = sizeof(Vector3f)* tam;
+        //Create an object that stores all of the state needed to suppl vertex data
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+
+        glGenBuffers(1, &VBO2);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+
+        glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
+    }
 }
 
-
-static void CreateVertexBuffer(Models m)
+static void CreateIndexBuffer(int *Indices, int tam, int n)
 {
-    Vector3f tableArray[NELEMENTS_TABLE * NVERTICES_CUBOIDE]; 
-    m.createTableBuffer(tableArray);
+    if(n == 1){
+        int arrayAux[NELEMENTS_TABLE * NINDEX_CUBOID];
 
-    //Create an object that stores all of the state needed to suppl vertex data
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+        for (int i = 0; i < tam; i++) {
+            arrayAux[i] = *Indices;
+            Indices++;
+        }
 
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        int size = sizeof(int) * tam;
+        glGenBuffers(1, &IBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
+    }
+    else{
+        int arrayAux[60];
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(tableArray), 0, GL_STATIC_DRAW);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(m.Buffer), 0, GL_STATIC_DRAW);
-    // // objects index separated
-    glBufferSubData(GL_ARRAY_BUFFER, a, sizeof(tableArray), tableArray);
+        for (int i = 0; i < tam; i++) {
+            arrayAux[i] = *Indices;
+            Indices++;
+        }
 
+        int size = sizeof(int) * tam;
+        glGenBuffers(2, &IBO2);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO2);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
+    }
 }
-
-static void CreateIndexBuffer(Models m, int nShift)
-{   
-    int tableArray[NELEMENTS_TABLE * NINDEX_CUBOID];
-    m.createTableIndices(tableArray);
-    m.setIndices(nShift, sizeof(m.Indices));
-    
-    glGenBuffers(1, &IBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tableArray), tableArray, GL_STATIC_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, NELEMENTS_TABLE * NINDEX_CUBOID, tableArray);
-
-//   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m.Indices), 0, GL_STATIC_DRAW);
-//   // objects index separated
-//   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(m.Indices), m.Indices);
-//   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices2) ,sizeof(IndicesIcosahedron), IndicesIcosahedron );
-
-}
-
 
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 {
@@ -275,29 +399,37 @@ static void CompileShaders()
         exit(1);
     }
 
-    string vs, fs;
+    std::string vs, fs;
 
     if (!ReadFile(pVSFileName, vs)) {
         exit(1);
     };
 
+    AddShader(ShaderProgram, vs.c_str(), GL_VERTEX_SHADER);
+
     if (!ReadFile(pFSFileName, fs)) {
         exit(1);
     };
 
-    AddShader(ShaderProgram, vs.c_str(), GL_VERTEX_SHADER);
     AddShader(ShaderProgram, fs.c_str(), GL_FRAGMENT_SHADER);
 
     GLint Success = 0;
     GLchar ErrorLog[1024] = { 0 };
 
     glLinkProgram(ShaderProgram);
+
     glGetProgramiv(ShaderProgram, GL_LINK_STATUS, &Success);
-        if (Success == 0) {
-                glGetProgramInfoLog(ShaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
-                fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
+    if (Success == 0) {
+        glGetProgramInfoLog(ShaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
+        fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
         exit(1);
-        }
+    }
+
+    gWVP = glGetUniformLocation(ShaderProgram, "gWVP");
+    if (gWVP == -1) {
+        printf("Error getting uniform location of 'gWVP'\n");
+        exit(1);
+    }
 
     glValidateProgram(ShaderProgram);
     glGetProgramiv(ShaderProgram, GL_VALIDATE_STATUS, &Success);
@@ -308,7 +440,4 @@ static void CompileShaders()
     }
 
     glUseProgram(ShaderProgram);
-
-    gWVPLocation = glGetUniformLocation(ShaderProgram, "gWVP");
-    assert(gWVPLocation != 0xFFFFFFFF);
 }
