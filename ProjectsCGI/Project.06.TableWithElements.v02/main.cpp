@@ -33,41 +33,16 @@
 #define WINDOW_WIDTH  980
 #define WINDOW_HEIGHT 720
 
-// struct Vertex_ {
-//     Vector3f pos;
-//     Vector3f color;
-
-//     Vertex_() {}
-
-//     Vertex_(float x, float y, float z)
-//     {
-//         pos = Vector3f(x, y, z);
-
-//         float red   = (float)rand() / (float)RAND_MAX;
-//         float green = (float)rand() / (float)RAND_MAX;
-//         float blue  = (float)rand() / (float)RAND_MAX;
-//         color = Vector3f(red, green, blue);
-//     }
-
-//     Vertex_(float x, float y, float z, float red, float green, float blue)
-//     {
-//         pos = Vector3f(x, y, z);
-//         color = Vector3f(red, green, blue);
-//     }
-
-//     Vertex_(float x, float y, float z, Vector3f cor)
-//     {
-//         pos = Vector3f(x, y, z);
-//         color = Vector3f(cor);
-//     }
-// };
-
 GLuint VAO;             // Vertex Array Object
 GLuint VBO;             // Vertex Buffer Object
 GLuint IBO;             // Index Buffer Object
 
 GLuint VBO2;             // Vertex Buffer Object
 GLuint IBO2;             // Index Buffer Object
+
+GLuint VBO3;             // Vertex Buffer Object
+GLuint IBO3;             // Index Buffer Object
+
 
 GLuint gWVP;
 
@@ -87,7 +62,7 @@ const char* pVSFileName = "shader.vs";
 const char* pFSFileName = "shader.fs";
 
 // -------------- Methods implemented ------------------------
-static void CreateVertexBuffer(Vector3f *array, int tam, int n);
+static void CreateVertexBuffer(Vertex *array, int tam, int n);
 static void CreateIndexBuffer(int *Indices, int tam, int n);
 
 static void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType);
@@ -151,12 +126,11 @@ int main(int argc, char** argv)
     glEnable(GL_BLEND);
 
     // Mesa ---------------------------------------------------------------------------------
-    Vertex tableOrigin;
+    Vertex tableOrigin(0.0, -1.0, 0.0);
     int obj = 1;
-    tableOrigin.x = 0.0; tableOrigin.y = -1.0; tableOrigin.z = 0.0;
-    float c2[] = { 0.0, 1.0, 0.0, 0.0 };
+    float c2[] = { 0.57, 0.28, 0.15 };
     Models table(tableOrigin, c2);
-    Vector3f arrayTable[NELEMENTS_TABLE * NVERTICES_CUBOIDE];
+    Vertex arrayTable[NELEMENTS_TABLE * NVERTICES_CUBOIDE];
     int arrayTableIndex[NELEMENTS_TABLE * NINDEX_CUBOID];
     table.createTableBuffer(arrayTable);
     for (int i = 0; i < NELEMENTS_TABLE * NVERTICES_CUBOIDE; i++)
@@ -166,12 +140,11 @@ int main(int argc, char** argv)
     CreateIndexBuffer(table.Indices, NELEMENTS_TABLE * NINDEX_CUBOID, obj);
 
     // Icosaedro-----------------------------------------------------------------------------
-    Vertex icoOrigin;
+    Vertex icoOrigin(0.0, 0.0, 0.0);
     obj = 2;
-    icoOrigin.x = 0.0; icoOrigin.y = 0.0; icoOrigin.z = 0.0;
-    float c[] = {1.0, 0.0, 0.0, 0.0};
+    float c[] = {0.3, 0.5, 1.0};  // azul claro
     Models ico(icoOrigin, c);
-    Vector3f arrayIco[NVERTICES_ICO];
+    Vertex arrayIco[NVERTICES_ICO];
     int arrayIcoIndex[60];
     ico.createIcosahedroBuffer();
     for (int i = 0; i < NVERTICES_ICO; i++)
@@ -214,41 +187,50 @@ static void RenderSceneCB()
     // glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
 
     
-    
     // position
-     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 
- glEnableVertexAttribArray(0);
-     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  
-     CubeWorldTransform.SetPosition(0.0f, 0.0f, 0.0f);
-     Matrix4f World = CubeWorldTransform.GetMatrix();
-     CubeWorldTransform.SetScale(0.5);
-    Matrix4f WVP = World * View;
-     glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
+    glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
     
-     glDrawElements(GL_TRIANGLES, NELEMENTS_TABLE * NINDEX_CUBOID , GL_UNSIGNED_INT, 0); // table
- glDisableVertexAttribArray(0);
+        CubeWorldTransform.SetPosition(0.0f, 0.0f, 0.0f);
+        Matrix4f World = CubeWorldTransform.GetMatrix();
+        CubeWorldTransform.SetScale(1);
+        Matrix4f WVP = World * View;
+        glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
+        
+        // color
+        glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        
+        glDrawElements(GL_TRIANGLES, NELEMENTS_TABLE * NINDEX_CUBOID , GL_UNSIGNED_INT, 0); // table
+    glDisableVertexAttribArray(0);
+
+        glDisableVertexAttribArray(1);
+    /* ------------------------------------------------------------------------------------       */
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO2);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO2);
     
-glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE, 0, 0);
-    CubeWorldTransform.SetPosition(0.0f, 0.5f, 0.0f);
-    CubeWorldTransform.SetScale(0.5);
-    Matrix4f World2 = CubeWorldTransform.GetMatrix();
-    WVP = World2*View;
-    glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
-    
-    glDrawElements(GL_TRIANGLES, 60 , GL_UNSIGNED_INT, 0); //
-glDisableVertexAttribArray(0);
-//     // color
-    // glEnableVertexAttribArray(1);
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
- 
-    // glDisableVertexAttribArray(1);
+    glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
+        CubeWorldTransform.SetPosition(0.1f, 0.14f, 0.0f);
+        CubeWorldTransform.SetScale(0.5);
+        Matrix4f World2 = CubeWorldTransform.GetMatrix();
+        WVP = World2*View;
+        glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
+
+        // color
+        glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        
+        glDrawElements(GL_TRIANGLES, 60 , GL_UNSIGNED_INT, 0); //
+    glDisableVertexAttribArray(0);
+
+        glDisableVertexAttribArray(1);
+    /* ------------------------------------------------------------------------------------       */
+
 
     glutPostRedisplay();
 
@@ -286,18 +268,17 @@ static void InitializeGlutCallbacks()
 }
 
 
-static void CreateVertexBuffer(Vector3f *array, const int tam, int n)
+static void CreateVertexBuffer(Vertex *array, const int tam, int n)
 {
     
     if(n == 1){
-        Vector3f arrayAux[NELEMENTS_TABLE * NVERTICES_CUBOIDE];
+        Vertex arrayAux[NELEMENTS_TABLE * NVERTICES_CUBOIDE];
     
         for (int i = 0; i < tam; i++){
             arrayAux[i] = *array;
             array++;
         }
 
-        int size = sizeof(Vector3f)* tam;
         //Create an object that stores all of the state needed to suppl vertex data
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);
@@ -308,14 +289,13 @@ static void CreateVertexBuffer(Vector3f *array, const int tam, int n)
         glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
     else{
-        Vector3f arrayAux[12];
+        Vertex arrayAux[12];
     
         for (int i = 0; i < tam; i++){
             arrayAux[i] = *array;
             array++;
         }
 
-        int size = sizeof(Vector3f)* tam;
         //Create an object that stores all of the state needed to suppl vertex data
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);

@@ -1,24 +1,24 @@
 #pragma once
 #include <iostream>
-#include <ogldev_math_3d.h>
+#include "VertexStruct.h"
 #define N_VERTICES 8
 
-struct Vertex {
-    float x;
-    float y;
-    float z;
+// struct Vertex {
+//     float x;
+//     float y;
+//     float z;
 
-    Vertex() {}
+//     Vertex() {}
 
-    Vertex(float x, float y, float z)
-    {
-        this->x = x;
-        this->y = y;
-        this->z = z;
+//     Vertex(float x, float y, float z)
+//     {
+//         this->x = x;
+//         this->y = y;
+//         this->z = z;
 
-    }
-    //Vector3f color;
-};
+//     }
+//     //Vector3f color;
+// };
 
 
 

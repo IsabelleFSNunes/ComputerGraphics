@@ -1,15 +1,14 @@
 #include "Models.h"
 
-Models::Models( Vertex origin, float color[4])
+Models::Models( Vertex origin, float color[3])
 {
     this->originCenter = origin;
     this->color[0] = color[0];
     this->color[1] = color[1];
     this->color[2] = color[2];
-    this->color[3] = color[3];
 }
 
-void Models::createTableBuffer(Vector3f Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]/*,  Vertex origin, float color[4]*/)
+void Models::createTableBuffer(Vertex Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]/*,  Vertex origin, float color[4]*/)
 {
     // Table  --------------------------------------------------------
 
@@ -25,7 +24,7 @@ void Models::createTableBuffer(Vector3f Table[( NELEMENTS_TABLE * NVERTICES_CUBO
 
     lengthTop = 1.0; heigthTop = 0.1; depthTop = 1.0;
     Cuboide Top(lengthTop, heigthTop, depthTop);
-    originCenter.x = 0; originCenter.y = 0; originCenter.z = 0;
+    originCenter.pos.x = 0; originCenter.pos.y = 0; originCenter.pos.z = 0;
     Top.Dimensions(topTable, originCenter);
 
     // restart the variables 
@@ -35,38 +34,38 @@ void Models::createTableBuffer(Vector3f Table[( NELEMENTS_TABLE * NVERTICES_CUBO
     Cuboide leg3Table(length, heigth, depth);
     Cuboide leg4Table(length, heigth, depth);
 
-    origin.x = topTable[0].x - length/2;  // 0.05 - 0.1/2
-    origin.y = topTable[0].y - heigth/2;  // 0.05 - 1.0/2 = 0
-    origin.z = topTable[0].z - depth /2;   // 0.5 - 0.1/2
+    origin.pos.x = topTable[0].pos.x - length/2;  // 0.05 - 0.1/2
+    origin.pos.y = topTable[0].pos.y - heigth/2;  // 0.05 - 1.0/2 = 0
+    origin.pos.z = topTable[0].pos.z - depth /2;   // 0.5 - 0.1/2
     leg1Table.Dimensions(legsTable[0], origin);
 
-    origin.x = topTable[2].x + length/2; 
-    origin.y = topTable[2].y - heigth/2;
-    origin.z = topTable[2].z - depth/2;
+    origin.pos.x = topTable[2].pos.x + length/2; 
+    origin.pos.y = topTable[2].pos.y - heigth/2;
+    origin.pos.z = topTable[2].pos.z - depth/2;
     leg2Table.Dimensions(legsTable[1], origin);
     
-    origin.x = topTable[4].x - length/2; 
-    origin.y = topTable[4].y - heigth/2;
-    origin.z = topTable[4].z + depth/2;
+    origin.pos.x = topTable[4].pos.x - length/2; 
+    origin.pos.y = topTable[4].pos.y - heigth/2;
+    origin.pos.z = topTable[4].pos.z + depth/2;
     leg3Table.Dimensions(legsTable[2], origin);
     
-    origin.x = topTable[6].x + length/2; 
-    origin.y = topTable[6].y - heigth/2;
-    origin.z = topTable[6].z + depth/2;
+    origin.pos.x = topTable[6].pos.x + length/2; 
+    origin.pos.y = topTable[6].pos.y - heigth/2;
+    origin.pos.z = topTable[6].pos.z + depth/2;
     leg4Table.Dimensions(legsTable[3], origin);
     
     for (int i = 0; i < NVERTICES; i++) {
-        Table[i] = Vector3f(topTable[i].x, topTable[i].y, topTable[i].z);
+        Table[i] = Vertex(topTable[i].pos.x, topTable[i].pos.y, topTable[i].pos.z, color);
         for (int j = 0; j < NLEGS; j++) {
-            Table[i + (j + 1) * NVERTICES] = Vector3f(legsTable[j][i].x, legsTable[j][i].y, legsTable[j][i].z);
+            Table[i + (j + 1) * NVERTICES] = Vertex(legsTable[j][i].pos.x, legsTable[j][i].pos.y, legsTable[j][i].pos.z, color);
         }
-        // printf("Table[%d] => x = %f y = %f e z = %f\t", i, Table[i].x, Table[i].y, Table[i].z);
-        // printf("Table[%d] => x = %f y = %f e z = %f\n", i+8, Table[i+8].x, Table[i+8].y, Table[i+8].z);
+        // printf("Table[%d] => x = %f y = %f e z = %f\t", i, Table[i].pos.x, Table[i].pos.y, Table[i].pos.z);
+        // printf("Table[%d] => x = %f y = %f e z = %f\n", i+8, Table[i+8].pos.x, Table[i+8].pos.y, Table[i+8].pos.z);
     }
 
     // Buffer = NULL;
 
-    this->Buffer = (Vector3f *)calloc(NELEMENTS_TABLE * NVERTICES_CUBOIDE , sizeof(Vector3f));
+    this->Buffer = (Vertex *)calloc(NELEMENTS_TABLE * NVERTICES_CUBOIDE , sizeof(Vertex));
     if (!this->Buffer) {
         cout << "Memory Allocation Failed";
         exit(1);
@@ -132,7 +131,7 @@ void Models::createIcosahedroBuffer(){
     };
     // int tri[3] = { 4,8,1 };
     // for(int i = 0; i < NVERTICES_ICO; i++){
-    //     icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z);
+    //     icosahedroVector[i] = Vertex(vdata[i].pos.x, vdata[i].pos.y, vdata[i].pos.z);
     // }
     // Vector3f redPure = Vector3f(1.0, 0.0, 0.0);
     // Vector3f greenPure = Vector3f(0.0, 1.0, 0.0);
@@ -142,20 +141,20 @@ void Models::createIcosahedroBuffer(){
     // int tri[3] = { 4,8,1 };
     // for(int i = 0; i < NVERTICES ; i++){    
     //     if(i == tri[0]){
-    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, redPure);
+    //         icosahedroVector[i] = Vertex(vdata[i].pos.x, vdata[i].pos.y, vdata[i].pos.z, redPure);
     //     }
     //     else if (i == tri[1])
-    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, greenPure);
+    //         icosahedroVector[i] = Vertex(vdata[i].pos.x, vdata[i].pos.y, vdata[i].pos.z, greenPure);
 
     //     else if (i == tri[2])
-    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, bluePure);
+    //         icosahedroVector[i] = Vertex(vdata[i].pos.x, vdata[i].pos.y, vdata[i].pos.z, bluePure);
 
     //     else
-    //         icosahedroVector[i] = Vertex(vdata[i].x, vdata[i].y, vdata[i].z, whitePure);
+    //         icosahedroVector[i] = Vertex(vdata[i].pos.x, vdata[i].pos.y, vdata[i].pos.z, whitePure);
 
     // }
 
-    this->Buffer = (Vector3f *)calloc(NVERTICES_ICO, sizeof(Vector3f));
+    this->Buffer = (Vertex *)calloc(NVERTICES_ICO, sizeof(Vertex));
     if (!this->Buffer) {
         cout << "Memory Allocation Failed";
         exit(1);
@@ -164,7 +163,7 @@ void Models::createIcosahedroBuffer(){
         int i;
         for (i = 0; i < NVERTICES_ICO; i++)
         {
-            *this->Buffer = vdata[i];
+            *this->Buffer = Vertex(vdata[i].x, vdata[i].y , vdata[i].z, color );
             this->Buffer++;
         }
         this->Buffer -= i;

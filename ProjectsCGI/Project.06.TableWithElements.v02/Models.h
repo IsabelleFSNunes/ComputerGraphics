@@ -1,7 +1,6 @@
 #pragma once
 #include "ogldev_math_3d.h"
 #include "Cuboide.h"
-#include "Icosahedron.h"
 //#include "def.h"
 
 // Declarations of global variables
@@ -22,14 +21,14 @@ const int NELEMENTS = 5;
 class Models
 {
 public:
-    Vector3f *Buffer;
+    Vertex *Buffer;
     int *Indices;
     Vertex originCenter;
-    float color[4];
+    float color[3];
 
 public:
-    Models(Vertex origin, float color[4]);
-    void createTableBuffer(Vector3f Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]);
+    Models(Vertex origin, float color[3]);
+    void createTableBuffer(Vertex Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]);
     void createTableIndices(int Indices2[NELEMENTS_TABLE * NINDEX_CUBOID]);
     void createIcosahedroBuffer();
     void createIcosahedroIndexLine(int Indices2[62]);

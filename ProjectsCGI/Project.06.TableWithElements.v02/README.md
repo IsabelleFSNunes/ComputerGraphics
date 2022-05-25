@@ -1,4 +1,5 @@
-# Project 02 - Cube 
+# Project 06 - v02
+## Table with Icosahedron, interative mode. 
 
 In this project you can draw a cube with rotations. This project has users interactions.
 
@@ -17,4 +18,4 @@ In this project you can draw a cube with rotations. This project has users inter
 
 ## One Example of execution:
 
-![P02_v03](../../imgs/Project02_v03.gif)
+![P06_v02](../../imgs/Project06_img01.jpg)

@@ -14,14 +14,14 @@ void Cuboide::Dimensions(Vertex coordinates[N_VERTICES], Vertex origin)
            if (i / 2 != 0)
                signalZ = -1;
 
-           coordinates[2 * i].x = origin.x + lenght / 2.0 * signalX;
-           coordinates[2 * i].y = origin.y + heigth / 2.0 * signalY;
-           coordinates[2 * i].z = origin.z + depth / 2.0 * signalZ;
+           coordinates[2 * i].pos.x = origin.pos.x + lenght / 2.0 * signalX;
+           coordinates[2 * i].pos.y = origin.pos.y + heigth / 2.0 * signalY;
+           coordinates[2 * i].pos.z = origin.pos.z + depth / 2.0 * signalZ;
 
            signalY *= -1;
-           coordinates[2 * i + 1].x = origin.x + lenght / 2.0 * signalX;
-           coordinates[2 * i + 1].y = origin.y + heigth / 2.0 * signalY;
-           coordinates[2 * i + 1].z = origin.z + depth / 2.0 * signalZ;
+           coordinates[2 * i + 1].pos.x = origin.pos.x + lenght / 2.0 * signalX;
+           coordinates[2 * i + 1].pos.y = origin.pos.y + heigth / 2.0 * signalY;
+           coordinates[2 * i + 1].pos.z = origin.pos.z + depth / 2.0 * signalZ;
 
            signalX *= -1;
            signalY *= -1;

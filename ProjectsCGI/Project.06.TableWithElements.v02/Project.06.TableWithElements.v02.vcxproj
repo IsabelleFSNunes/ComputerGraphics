@@ -37,6 +37,7 @@
     <ClInclude Include="Cuboide.h" />
     <ClInclude Include="Icosahedron.h" />
     <ClInclude Include="Models.h" />
+    <ClInclude Include="VertexStruct.h" />
     <ClInclude Include="world_transform.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
