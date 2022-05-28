@@ -34,19 +34,15 @@
 #define WINDOW_HEIGHT 720
 
 GLuint VAO;             // Vertex Array Object
-GLuint VBO;             // Vertex Buffer Object
-GLuint IBO;             // Index Buffer Object
-
-GLuint VBO2;             // Vertex Buffer Object
-GLuint IBO2;             // Index Buffer Object
-
-GLuint VBO3;             // Vertex Buffer Object
-GLuint IBO3;             // Index Buffer Object
-
+GLuint VBO[3];             // Vertex Buffer Object
+GLuint IBO[3];             // Index Buffer Object
 
 GLuint gWVP;
 
-WorldTrans CubeWorldTransform;
+WorldTrans WorldTransform;
+WorldTrans TableTransform;
+WorldTrans IcoTransform; 
+
 Vector3f CameraPos(0.0f, 0.0f, -1.0f);
 Vector3f CameraTarget(0.0f, 0.0f, 1.0f);
 Vector3f CameraUp(0.0f, 1.0f, 0.0f);
@@ -126,7 +122,8 @@ int main(int argc, char** argv)
     glEnable(GL_BLEND);
 
     // Mesa ---------------------------------------------------------------------------------
-    Vertex tableOrigin(0.0, -1.0, 0.0);
+    Vertex tableOrigin(0.0, 0.0, 0.0);
+
     int obj = 1;
     float c2[] = { 0.57, 0.28, 0.15 };
     Models table(tableOrigin, c2);
@@ -142,7 +139,7 @@ int main(int argc, char** argv)
     // Icosaedro-----------------------------------------------------------------------------
     Vertex icoOrigin(0.0, 0.0, 0.0);
     obj = 2;
-    float c[] = {0.3, 0.5, 1.0};  // azul claro
+    float c[] = {-1, -1, -1};  // azul claro
     Models ico(icoOrigin, c);
     Vertex arrayIco[NVERTICES_ICO];
     int arrayIcoIndex[60];
@@ -173,9 +170,9 @@ static void RenderSceneCB()
     float YRotationAngle = 1.0f;
 #endif
 
-    // CubeWorldTransform.SetPosition(0.0f, 0.0f, 2.0f);
-    // CubeWorldTransform.Rotate(0.0f, YRotationAngle, 0.00f);
-    // Matrix4f World = CubeWorldTransform.GetMatrix();
+    WorldTransform.SetPosition(0.0f, 0.0f, 0.0f);
+    WorldTransform.Rotate(0.0f, YRotationAngle, 0.00f);
+    Matrix4f World = WorldTransform.GetMatrix();
 
     Matrix4f View = GameCamera.GetMatrix();
 
@@ -188,16 +185,17 @@ static void RenderSceneCB()
 
     
     // position
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[0]);
 
     glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
     
-        CubeWorldTransform.SetPosition(0.0f, 0.0f, 0.0f);
-        Matrix4f World = CubeWorldTransform.GetMatrix();
-        CubeWorldTransform.SetScale(1);
-        Matrix4f WVP = World * View;
+        TableTransform.SetPosition(0.0f, 0.0f, 0.0f);
+        TableTransform.Rotate(0.0f, 0.0f, 0.0f);
+        TableTransform.SetScale(0.8);
+        Matrix4f TableTransformMatrix = TableTransform.GetMatrix();
+        Matrix4f WVP = TableTransformMatrix*World * View;
         glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
         
         // color
@@ -206,20 +204,20 @@ static void RenderSceneCB()
         
         glDrawElements(GL_TRIANGLES, NELEMENTS_TABLE * NINDEX_CUBOID , GL_UNSIGNED_INT, 0); // table
     glDisableVertexAttribArray(0);
-
         glDisableVertexAttribArray(1);
     /* ------------------------------------------------------------------------------------       */
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO2);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[1]);
     
     glEnableVertexAttribArray(0);
         glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
-        CubeWorldTransform.SetPosition(0.1f, 0.14f, 0.0f);
-        CubeWorldTransform.SetScale(0.5);
-        Matrix4f World2 = CubeWorldTransform.GetMatrix();
-        WVP = World2*View;
-        glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
+        IcoTransform.SetPosition(0.1f, 0.14f, 0.0f);
+        IcoTransform.Rotate(0.0f, 0.0f, 0.0f);
+        IcoTransform.SetScale(0.5);
+        Matrix4f icoTransfMatrix = IcoTransform.GetMatrix();
+        Matrix4f WVP2 = icoTransfMatrix*World*View;
+        glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP2.m[0][0]);
 
         // color
         glEnableVertexAttribArray(1);
@@ -227,7 +225,6 @@ static void RenderSceneCB()
         
         glDrawElements(GL_TRIANGLES, 60 , GL_UNSIGNED_INT, 0); //
     glDisableVertexAttribArray(0);
-
         glDisableVertexAttribArray(1);
     /* ------------------------------------------------------------------------------------       */
 
@@ -283,8 +280,8 @@ static void CreateVertexBuffer(Vertex *array, const int tam, int n)
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);
 
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glGenBuffers(1, &VBO[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
@@ -300,8 +297,8 @@ static void CreateVertexBuffer(Vertex *array, const int tam, int n)
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);
 
-        glGenBuffers(1, &VBO2);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glGenBuffers(1, &VBO[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
@@ -318,8 +315,8 @@ static void CreateIndexBuffer(int *Indices, int tam, int n)
         }
 
         int size = sizeof(int) * tam;
-        glGenBuffers(1, &IBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+        glGenBuffers(1, &IBO[0]);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[0]);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
     else{
@@ -331,8 +328,8 @@ static void CreateIndexBuffer(int *Indices, int tam, int n)
         }
 
         int size = sizeof(int) * tam;
-        glGenBuffers(2, &IBO2);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO2);
+        glGenBuffers(2, &IBO[1]);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[1]);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
 }

@@ -55,7 +55,10 @@ void Models::createTableBuffer(Vertex Table[( NELEMENTS_TABLE * NVERTICES_CUBOID
     leg4Table.Dimensions(legsTable[3], origin);
     
     for (int i = 0; i < NVERTICES; i++) {
-        Table[i] = Vertex(topTable[i].pos.x, topTable[i].pos.y, topTable[i].pos.z, color);
+        if(color[0] == -1)
+            Table[i] = Vertex(topTable[i].pos.x, topTable[i].pos.y, topTable[i].pos.z);
+        else
+            Table[i] = Vertex(topTable[i].pos.x, topTable[i].pos.y, topTable[i].pos.z, color);
         for (int j = 0; j < NLEGS; j++) {
             Table[i + (j + 1) * NVERTICES] = Vertex(legsTable[j][i].pos.x, legsTable[j][i].pos.y, legsTable[j][i].pos.z, color);
         }
@@ -163,7 +166,10 @@ void Models::createIcosahedroBuffer(){
         int i;
         for (i = 0; i < NVERTICES_ICO; i++)
         {
-            *this->Buffer = Vertex(vdata[i].x, vdata[i].y , vdata[i].z, color );
+            if(color[0] == -1)
+                *this->Buffer = Vertex(vdata[i].x, vdata[i].y , vdata[i].z );
+            else
+                *this->Buffer = Vertex(vdata[i].x, vdata[i].y , vdata[i].z, color );
             this->Buffer++;
         }
         this->Buffer -= i;
