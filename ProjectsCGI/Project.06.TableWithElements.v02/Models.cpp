@@ -8,6 +8,68 @@ Models::Models( Vertex origin, float color[3])
     this->color[2] = color[2];
 }
 
+void Models::createCubeBuffer(Vertex Cube[NVERTICES_CUBOIDE], float size)
+{
+    Vertex origin(0.0f, 0.0f, 0.0f);
+    Cuboide c(size, size, size);
+
+    // Buffer = NULL; 
+    c.Dimensions(Cube, origin);
+    for(int i=0; i < NVERTICES_CUBOIDE; i++){
+        if(color[i] == -1)
+            Cube[i] = Vertex(Cube[i].pos.x, Cube[i].pos.y, Cube[i].pos.z);
+        else
+            Cube[i] = Vertex(Cube[i].pos.x, Cube[i].pos.y, Cube[i].pos.z, color);
+    }
+    
+    this->Buffer = (Vertex*)calloc(NVERTICES_CUBOIDE, sizeof(Vertex));
+    if (!this->Buffer) {
+        cout << "Memory Allocation Failed";
+        exit(1);
+    }
+    else {
+        int i;
+        for (i = 0; i < NVERTICES_CUBOIDE; i++)
+        {
+            *this->Buffer = Cube[i];
+            this->Buffer++;
+        }
+        this->Buffer -= i;
+    }
+
+}
+
+void Models::createCubeIndices(int Indices2[NINDEX_CUBOID])
+{
+    this->Indices = Indices2;
+
+    int IndicesCuboid[] = {
+                               4,7,6,
+                             7,1,3,
+                             5,0,1,
+                             2,1,0,
+                             6,3,2,
+                             4,2,0,
+                             4,5,7,
+                             7,5,1,
+                             5,4,0,
+                             2,3,1,
+                             6,7,3,
+                             4,6,2,
+    };
+
+    
+    for (int j = 0; j < NINDEX_CUBOID; j++)
+    {
+        *this->Indices = IndicesCuboid[j];
+
+        printf("Indices[%d] = %d\n", j, *Indices);
+        this->Indices++;
+    }
+
+    this->Indices -= NINDEX_CUBOID;
+}
+
 void Models::createTableBuffer(Vertex Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]/*,  Vertex origin, float color[4]*/)
 {
     // Table  --------------------------------------------------------

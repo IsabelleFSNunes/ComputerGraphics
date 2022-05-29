@@ -28,6 +28,8 @@ public:
 
 public:
     Models(Vertex origin, float color[3]);
+    void createCubeBuffer(Vertex Cube[NVERTICES_CUBOIDE], float size);
+    void createCubeIndices(int Indices2[NINDEX_CUBOID]);
     void createTableBuffer(Vertex Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]);
     void createTableIndices(int Indices2[NELEMENTS_TABLE * NINDEX_CUBOID]);
     void createIcosahedroBuffer();

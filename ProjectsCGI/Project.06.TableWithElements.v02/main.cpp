@@ -42,6 +42,7 @@ GLuint gWVP;
 WorldTrans WorldTransform;
 WorldTrans TableTransform;
 WorldTrans IcoTransform; 
+WorldTrans CubeTransform; 
 
 Vector3f CameraPos(0.0f, 0.0f, -1.0f);
 Vector3f CameraTarget(0.0f, 0.0f, 1.0f);
@@ -150,6 +151,22 @@ int main(int argc, char** argv)
     ico.createIcosahedroIndexFaces(arrayIcoIndex);
     CreateIndexBuffer(ico.Indices, 60, obj);
 
+
+    // Cube -----------------------------------------------------------------------------
+    Vertex cubeOrigin(0.0, 0.0, 0.0);
+    obj = 3;
+    float c3[] = {0.0, 0.0, 0.5};  // azul claro
+    Models cube(cubeOrigin, c3);
+    Vertex arrayCube[NVERTICES_CUBOIDE];
+    int arrayCubeIndex[NINDEX_CUBOID];
+    cube.createCubeBuffer(arrayCube, 0.35f);
+    for (int i = 0; i < NVERTICES_CUBOIDE; i++)
+        arrayCube[i] = cube.Buffer[i];
+    CreateVertexBuffer(arrayCube, NVERTICES_CUBOIDE, obj);
+    cube.createCubeIndices(arrayCubeIndex);
+    CreateIndexBuffer(cube.Indices, NINDEX_CUBOID, obj);
+
+
     CompileShaders();
 
     glutMainLoop();
@@ -195,7 +212,7 @@ static void RenderSceneCB()
         TableTransform.Rotate(0.0f, 0.0f, 0.0f);
         TableTransform.SetScale(0.8);
         Matrix4f TableTransformMatrix = TableTransform.GetMatrix();
-        Matrix4f WVP = TableTransformMatrix*World * View;
+        Matrix4f WVP = Projection * View * TableTransformMatrix*World;
         glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP.m[0][0]);
         
         // color
@@ -216,7 +233,7 @@ static void RenderSceneCB()
         IcoTransform.Rotate(0.0f, 0.0f, 0.0f);
         IcoTransform.SetScale(0.5);
         Matrix4f icoTransfMatrix = IcoTransform.GetMatrix();
-        Matrix4f WVP2 = icoTransfMatrix*World*View;
+        Matrix4f WVP2 =  Projection * View * icoTransfMatrix * World;
         glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP2.m[0][0]);
 
         // color
@@ -228,6 +245,28 @@ static void RenderSceneCB()
         glDisableVertexAttribArray(1);
     /* ------------------------------------------------------------------------------------       */
 
+    /* ------------------------------------------------------------------------------------       */
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[2]);
+    
+    glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
+        CubeTransform.SetPosition(-0.2f, 0.125f, 0.0f);
+        CubeTransform.Rotate(0.0f, 0.0f, 0.0f);
+        CubeTransform.SetScale(0.5);
+        Matrix4f cubeTransfMatrix = CubeTransform.GetMatrix();
+        Matrix4f WVP3 = Projection * View * cubeTransfMatrix * World ;
+        glUniformMatrix4fv(gWVP, 1, GL_TRUE, &WVP3.m[0][0]);
+
+        // color
+        glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        
+        glDrawElements(GL_TRIANGLES, NINDEX_CUBOID , GL_UNSIGNED_INT, 0); //
+    glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+    /* ------------------------------------------------------------------------------------       */
 
     glutPostRedisplay();
 
@@ -285,7 +324,7 @@ static void CreateVertexBuffer(Vertex *array, const int tam, int n)
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
-    else{
+    else if (n == 2){
         Vertex arrayAux[12];
     
         for (int i = 0; i < tam; i++){
@@ -302,6 +341,23 @@ static void CreateVertexBuffer(Vertex *array, const int tam, int n)
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
+    else if (n == 3){
+         Vertex arrayAux[NVERTICES_CUBOIDE];
+    
+        for (int i = 0; i < tam; i++){
+            arrayAux[i] = *array;
+            array++;
+        }
+
+        //Create an object that stores all of the state needed to suppl vertex data
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+
+        glGenBuffers(1, &VBO[2]);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+
+        glBufferData(GL_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
+    }
 }
 
 static void CreateIndexBuffer(int *Indices, int tam, int n)
@@ -313,23 +369,30 @@ static void CreateIndexBuffer(int *Indices, int tam, int n)
             arrayAux[i] = *Indices;
             Indices++;
         }
-
-        int size = sizeof(int) * tam;
         glGenBuffers(1, &IBO[0]);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[0]);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
-    else{
+    else if(n==2){
         int arrayAux[60];
 
         for (int i = 0; i < tam; i++) {
             arrayAux[i] = *Indices;
             Indices++;
         }
-
-        int size = sizeof(int) * tam;
         glGenBuffers(2, &IBO[1]);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[1]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
+    }
+    else if (n==3){
+         int arrayAux[NINDEX_CUBOID];
+
+        for (int i = 0; i < tam; i++) {
+            arrayAux[i] = *Indices;
+            Indices++;
+        }
+        glGenBuffers(2, &IBO[2]);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[2]);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(arrayAux), arrayAux, GL_STATIC_DRAW);
     }
 }
