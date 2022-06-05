@@ -157,21 +157,24 @@ void Camera::OnKeyboard(unsigned char Key)
 
 void Camera::OnMouse(int x, int y)
 {
+    // x e y atual valor
+    // m_mousePos valor 
     int DeltaX = x - m_mousePos.x;
-    int DeltaY = y - m_mousePos.y;
+    int DeltaY = m_mousePos.y - y;
 
     m_mousePos.x = x;
     m_mousePos.y = y;
 
-    m_AngleH += (float)DeltaX / 20.0f;
-    m_AngleV += (float)DeltaY / 50.0f;
-
-    if (DeltaX == 0) {
+    m_AngleH += (float)DeltaX / m_windowWidth;
+    m_AngleV += (float)DeltaY / m_windowHeight;
+    
+    if (DeltaX < 0) {
         if (x <= MARGIN) {
             m_OnLeftEdge = true;
         }
         else if (x >= (m_windowWidth - MARGIN)) {
             m_OnRightEdge = true;
+
         }
     }
     else {

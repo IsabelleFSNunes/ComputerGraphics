@@ -61,6 +61,11 @@ private:
     bool m_OnRightEdge;
 
     Vector2i m_mousePos;
+
+    Matrix4f m_world;
+    Matrix4f m_view;
+    Matrix4f m_projection;
+
 };
 
 #endif  /* CAMERA_H */

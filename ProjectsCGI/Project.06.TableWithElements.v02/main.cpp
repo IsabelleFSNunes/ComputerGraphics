@@ -39,6 +39,8 @@ GLuint IBO[3];             // Index Buffer Object
 
 GLuint gWVP;
 
+int passive_mouse = 1;
+
 WorldTrans WorldTransform;
 WorldTrans TableTransform;
 WorldTrans IcoTransform; 
@@ -229,7 +231,7 @@ static void RenderSceneCB()
     
     glEnableVertexAttribArray(0);
         glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
-        IcoTransform.SetPosition(0.1f, 0.14f, 0.0f);
+        IcoTransform.SetPosition(0.1f, 0.145f, 0.0f);
         IcoTransform.Rotate(0.0f, 0.0f, 0.0f);
         IcoTransform.SetScale(0.5);
         Matrix4f icoTransfMatrix = IcoTransform.GetMatrix();
@@ -252,7 +254,7 @@ static void RenderSceneCB()
     
     glEnableVertexAttribArray(0);
         glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
-        CubeTransform.SetPosition(-0.2f, 0.125f, 0.0f);
+        CubeTransform.SetPosition(-0.2f, 0.128f, 0.0f);
         CubeTransform.Rotate(0.0f, 0.0f, 0.0f);
         CubeTransform.SetScale(0.5);
         Matrix4f cubeTransfMatrix = CubeTransform.GetMatrix();
@@ -277,7 +279,7 @@ static void KeyboardCB(unsigned char key, int mouse_x, int mouse_y)
 {
     if (key == 'q' || key == 27) {
         exit(0);
-    }
+    }  
 
     GameCamera.OnKeyboard(key);
 }
@@ -300,7 +302,7 @@ static void InitializeGlutCallbacks()
     glutDisplayFunc(RenderSceneCB);
     glutKeyboardFunc(KeyboardCB);
     glutSpecialFunc(SpecialKeyboardCB);
-    glutPassiveMotionFunc(PassiveMouseCB);
+    glutMotionFunc(PassiveMouseCB);
 }
 
 

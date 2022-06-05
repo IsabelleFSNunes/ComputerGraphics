@@ -23,7 +23,6 @@
     <ClCompile Include="..\..\Common\ogldev_util.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="Cuboide.cpp" />
-    <ClCompile Include="Icosahedron.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Models.cpp" />
     <ClCompile Include="world_transform.cpp" />
@@ -35,7 +34,6 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="Cuboide.h" />
-    <ClInclude Include="Icosahedron.h" />
     <ClInclude Include="Models.h" />
     <ClInclude Include="VertexStruct.h" />
     <ClInclude Include="world_transform.h" />

@@ -1,5 +1,5 @@
-# INCPATH = -I../Include -I/usr/local/include/ATB -I/opt/ImageMagick/include/ImageMagick-6/ -I../Common/FreetypeGL -I/usr/include/freetype2 -I/usr/include/assimp -I/usr/include
-INCPATH = -I../../Include/ -I../../Include/GL/ -I../../Include/ATB  -I../../Common/freetype2
+INCPATH = -I../Include -I/usr/local/include/ATB -I/opt/ImageMagick/include/ImageMagick-6/ -I../Common/FreetypeGL -I/usr/include/freetype2 -I/usr/include/assimp -I/usr/include
+# INCPATH = -I../../Include/ -I../../Include/GL/ -I../../Include/ATB  -I../../Common/freetype2
 LIBPATH = -L/usr/lib/x86_64-linux-gnu/ -L/opt/ImageMagick/lib
 LDFLAGS = -lGL -lGLU -lGLEW -lglut -lAntTweakBar -lMagick++-6.Q16 -lMagickCore-6.Q16 -lMagickWand-6.Q16 -lfreetype -lm -lfontconfig -lassimp
 
