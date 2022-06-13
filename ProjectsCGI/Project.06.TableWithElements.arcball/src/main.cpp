@@ -1,22 +1,4 @@
-    /*
-
-        Copyright 2010 Etay Meiri
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-    Tutorial 15 - Camera Rotation With Quaternions
-*/
+/* @IsabelleFSNunes */
 
 #include <stdio.h>
 #include <string.h>
@@ -51,7 +33,7 @@ Vector3f CameraTarget(0.0f, 0.0f, 1.5f);
 Vector3f CameraUp(0.0f, 1.5f, 0.0f);
 Camera GameCamera(WINDOW_WIDTH, WINDOW_HEIGHT, CameraPos, CameraTarget, CameraUp);
 
-float FOV = 45.0f;
+float FOV = 60.0f;
 float zNear = 1.0f;
 float zFar = 100.0f;
 PersProjInfo PersProjInfo = { FOV, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, zNear, zFar };
@@ -93,7 +75,7 @@ int main(int argc, char** argv)
     int y = 0.1*height;
 
     glutInitWindowPosition(x, y);
-    int win = glutCreateWindow("Project 06 - Table with other elements");
+    int win = glutCreateWindow("Project 06 - Table, cube and icosahedron. [ARCBALL]");
     printf("window id: %d\n", win);
 
     char game_mode_string[64];
