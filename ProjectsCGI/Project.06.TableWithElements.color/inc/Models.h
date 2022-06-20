@@ -37,7 +37,7 @@ public:
     Models();
     Models(int id);
     Models(Vertex origin, float color[3]);
-    void createCubeBuffer(Vertex Cube[NVERTICES_CUBOIDE], float size);
+    void createCubeBuffer(Vertex Cube[NVERTICES_CUBOIDE * 3], float size);
     void createCubeIndices(int Indices2[NINDEX_CUBOID]);
     void createTableBuffer(Vertex Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]);
     void createTableIndices(int Indices2[NELEMENTS_TABLE * NINDEX_CUBOID]);
@@ -45,5 +45,7 @@ public:
     void createIcosahedroIndexLine(int Indices2[62]);
     void createIcosahedroIndexFaces(int Indices2[60]);
     void setIndices(int n, int tam);
+    void setNormalVectorPoints();
+    Vector3f computeFaceNormal(Vector3f v1, Vector3f v2, Vector3f v3);
 };
 #endif

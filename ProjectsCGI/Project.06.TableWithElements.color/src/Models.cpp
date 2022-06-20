@@ -14,36 +14,44 @@ Models::Models( Vertex origin, float color[3])
     this->color[2] = color[2];
 }
 
-void Models::createCubeBuffer(Vertex Cube[NVERTICES_CUBOIDE], float size)
-{
+void Models::createCubeBuffer(Vertex CubeOutput[NVERTICES_CUBOIDE*3], float size)
+{   // variable size is size of dimensions of cubes sides.
+    Vertex Cube[N_VERTICES];
     Vertex origin(0.0f, 0.0f, 0.0f);
     Cuboide c(size, size, size);
 
     // Buffer = NULL; 
     c.Dimensions(Cube, origin);
-    for(int i=0; i < NVERTICES_CUBOIDE; i++){
-        if(color[i] == -1)
-            Cube[i] = Vertex(Cube[i].pos.x, Cube[i].pos.y, Cube[i].pos.z);
-        else
-            Cube[i] = Vertex(Cube[i].pos.x, Cube[i].pos.y, Cube[i].pos.z, color);
+    for(int i=0; i < NVERTICES_CUBOIDE*3; i+=3){
+        if(color[i] == -1){
+            CubeOutput[i] = Vertex(Cube[i/3].pos.x, Cube[i/3].pos.y, Cube[i/3].pos.z);
+            CubeOutput[i+1] = Vertex(Cube[i/3].pos.x, Cube[i/3].pos.y, Cube[i/3].pos.z);
+            CubeOutput[i+2] = Vertex(Cube[i/3].pos.x, Cube[i/3].pos.y, Cube[i/3].pos.z);
+        
+        }
+        else{
+            CubeOutput[i] = Vertex(Cube[i/3].pos.x, Cube[i/3].pos.y, Cube[i/3].pos.z, color);
+            CubeOutput[i+1] = Vertex(Cube[i/3].pos.x, Cube[i/3].pos.y, Cube[i/3].pos.z, color);
+            CubeOutput[i+2] = Vertex(Cube[i/3].pos.x, Cube[i/3].pos.y, Cube[i/3].pos.z, color);
+        }
      }
     
-    this->Buffer = (Vertex*)calloc(NVERTICES_CUBOIDE, sizeof(Vertex));
+    this->Buffer = (Vertex*)calloc(NVERTICES_CUBOIDE*3, sizeof(Vertex));
     if (!this->Buffer) {
         cout << "Memory Allocation Failed";
         exit(1);
     }
     else {
         int i;
-        for (i = 0; i < NVERTICES_CUBOIDE; i++)
+        for (i = 0; i < NVERTICES_CUBOIDE*3; i++)
         {
-            *this->Buffer = Cube[i];
+            *this->Buffer = CubeOutput[i];
             this->Buffer++;
         }
         this->Buffer -= i;
     }
 
-    sizeBuffer = NVERTICES_CUBOIDE;
+    sizeBuffer = NVERTICES_CUBOIDE*3;
     id = 3;
 
 }
@@ -52,33 +60,34 @@ void Models::createCubeIndices(int Indices2[NINDEX_CUBOID])
 {
     this->Indices = Indices2;
     
-    int IndicesCuboid[] = {
-         4,7,6,
-                             7,1,3,
-                             5,0,1,
-                             2,1,0,
-                             6,3,2,
-                             4,2,0,
-                             4,5,7,
-                             7,5,1,
-                             5,4,0,
-                             2,3,1,
-                             6,7,3,
-                             4,6,2,
-                            /* 0, 9, 3,
-                            0, 6, 9,
-                            1, 4, 16,
-                            1, 16, 13,
-                            2, 20, 8,
-                            2, 14, 20,
-                            18, 12, 15,
-                            18, 15, 21,
-                            7, 22, 10,
-                            7, 19, 22,
-                            5, 23, 17,
-                            5, 11, 23,*/
+    int IndicesCuboid[36] = {
+                            //  4,7,6,
+                            //  7,1,3,
+                            //  5,0,1,
+                            //  2,1,0,
+                            //  6,3,2,
+                            //  4,2,0,
+                            //  4,5,7,
+                            //  7,5,1,
+                            //  5,4,0,
+                            //  2,3,1,
+                            //  6,7,3,
+                            //  4,6,2,
+                            // saida para 3 vertices com o mesmo valor de posição e normas distintas
+                            0, 3, 9,
+                            0, 9, 6,
+                            1, 16, 4,
+                            1, 13, 16,
+                            2, 20, 14,
+                            2, 8, 20,
+                            18, 15, 12,
+                            18, 21, 15,
+                            7, 10, 22,
+                            7, 22, 19,
+                            5, 23, 11,
+                            5, 17, 23,
     };
-    
+
     for (int j = 0; j < NINDEX_CUBOID; j++)
     {
         *this->Indices = IndicesCuboid[j];
@@ -89,7 +98,8 @@ void Models::createCubeIndices(int Indices2[NINDEX_CUBOID])
 
     this->Indices -= NINDEX_CUBOID;
 
-     sizeIndices = NINDEX_CUBOID;
+    sizeIndices = NINDEX_CUBOID;
+
 }
 
 void Models::createTableBuffer(Vertex Table[( NELEMENTS_TABLE * NVERTICES_CUBOIDE )]/*,  Vertex origin, float color[4]*/)
@@ -348,4 +358,59 @@ void Models:: setIndices(int n, int tam){
         p++;
     }
     
+}
+
+void Models::setNormalVectorPoints(){
+   
+   Vector3f k1, k2, k3; 
+
+   Vector3f n(0.0f, 0.0f, 0.0f);
+
+   for(int k = 0; k < sizeIndices; k+=3){
+        k1 = this->Buffer[this->Indices[k  ]].pos;
+        k2 = this->Buffer[this->Indices[k+1]].pos;
+        k3 = this->Buffer[this->Indices[k+2]].pos;
+        n = computeFaceNormal(k1, k2, k3);
+
+        this->Buffer[this->Indices[k  ]].normal = n;
+        this->Buffer[this->Indices[k+1]].normal = n;
+        this->Buffer[this->Indices[k+2]].normal = n;
+   }
+   
+}    
+
+Vector3f Models::computeFaceNormal(Vector3f v1, Vector3f v2, Vector3f v3)
+{
+    const float EPSILON = 0.000001f;
+
+    // default return value (0, 0, 0)
+    Vector3f n(0.0f, 0.0f, 0.0f);
+
+    // find 2 edge vectors: v1-v2, v1-v3
+    float ex1 = v2.x - v1.x;
+    float ey1 = v2.y - v1.y;
+    float ez1 = v2.z - v1.z;
+    float ex2 = v3.x - v1.x;
+    float ey2 = v3.y - v1.y;
+    float ez2 = v3.z - v1.z;
+
+    // cross product: e1 x e2
+    float nx, ny, nz;
+    nx = ey1 * ez2 - ez1 * ey2;
+    ny = ez1 * ex2 - ex1 * ez2;
+    nz = ex1 * ey2 - ey1 * ex2;
+
+    // normalize only if the length is > 0
+    float length = sqrtf(nx * nx + ny * ny + nz * nz);
+    
+    if(length > EPSILON)
+    {
+        // normalize
+        float lengthInv = 1.0f / length;
+        n.x = nx * lengthInv;
+        n.y = ny * lengthInv;
+        n.z = nz * lengthInv;
+    }
+
+    return n;
 }

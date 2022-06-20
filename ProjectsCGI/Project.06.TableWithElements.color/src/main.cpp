@@ -172,17 +172,18 @@ void drawIcosahedron(){
 void drawCube(){
     // Cube -----------------------------------------------------------------------------
     Vertex cubeOrigin(0.0, 0.0, 0.0);
-    float cCube[] = {0.0f, 0.0f, 0.5f};  // azul claro
+    float cCube[] = {-1.0f, 0.0f, 0.5f};  // azul claro
     int obj = 3;
     cube = Models(cubeOrigin, cCube);
-    Vertex arrayCube[NVERTICES_CUBOIDE];
+    Vertex arrayCube[NVERTICES_CUBOIDE * 3];
     int arrayCubeIndex[NINDEX_CUBOID];
     cube.createCubeBuffer(arrayCube, 0.35f);
-    for (int i = 0; i < NVERTICES_CUBOIDE ; i++)
+    for (int i = 0; i < cube.sizeBuffer ; i++)
         arrayCube[i] = cube.Buffer[i];
-    CreateVertexBuffer(arrayCube, NVERTICES_CUBOIDE , obj, false);
+    CreateVertexBuffer(arrayCube, cube.sizeBuffer , cube.id, false);
     cube.createCubeIndices(arrayCubeIndex);
-    CreateIndexBuffer(cube.Indices, NINDEX_CUBOID, obj);
+    CreateIndexBuffer(cube.Indices, NINDEX_CUBOID, cube.id);
+    cube.setNormalVectorPoints();
 }
 
 static void RenderSceneCB()
@@ -214,7 +215,7 @@ static void RenderSceneCB()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[0]);
 
     glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,  9 * sizeof(float), 0);
     
         TableTransform.SetPosition(0.0f, 0.0f, -0.5f);
         TableTransform.SetScale(0.8);
@@ -225,18 +226,24 @@ static void RenderSceneCB()
         
         // color
         glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+        
+        // // normal
+        // glEnableVertexAttribArray(2);
+        //     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
         
         glDrawElements(GL_TRIANGLES, NELEMENTS_TABLE * NINDEX_CUBOID , GL_UNSIGNED_INT, 0); // table
     glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        // glDisableVertexAttribArray(2);
+
     /* ------------------------------------------------------------------------------------       */
     // ICOSAHEDRON
     glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[1]);
     
     glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
+        glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  9 * sizeof(float), 0);
         IcoTransform.SetPosition(0.1f, 0.145f, -0.5f);
         //IcoTransform.Rotate(0.0f, 0.0f, 0.0f);
         IcoTransform.SetScale(0.5);
@@ -246,11 +253,17 @@ static void RenderSceneCB()
 
         // color
         glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+        
+        // // normal
+        // glEnableVertexAttribArray(2);
+        //     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
         
         glDrawElements(GL_TRIANGLES, 60 , GL_UNSIGNED_INT, 0); //
     glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        // glDisableVertexAttribArray(2);
+        
     /* ------------------------------------------------------------------------------------       */
 
     /* ------------------------------------------------------------------------------------       */
@@ -259,7 +272,7 @@ static void RenderSceneCB()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[2]);
     
     glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  6 * sizeof(float), 0);
+        glVertexAttribPointer(0 , 3, GL_FLOAT, GL_FALSE,  9 * sizeof(float), 0);
         CubeTransform.SetPosition(-0.2f, 0.128f, -0.5f);
         //CubeTransform.Rotate(0.0f, 0.0f, 0.0f);
         CubeTransform.SetScale(0.5);
@@ -269,11 +282,17 @@ static void RenderSceneCB()
 
         // color
         glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+        
+        // normal
+        glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
         
         glDrawElements(GL_TRIANGLES, NINDEX_CUBOID , GL_UNSIGNED_INT, 0); //
     glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
+
     /* ------------------------------------------------------------------------------------       */
 
     glutPostRedisplay();
@@ -322,7 +341,7 @@ static void CreateVertexBuffer(Vertex* array, int tam, int n, bool is_update )
     }
     else if (n == 3){
          
-        Vertex arrayAux[NVERTICES_CUBOIDE];
+        Vertex arrayAux[NVERTICES_CUBOIDE * 3];
     
         for (int i = 0; i < tam; i++){
             arrayAux[i] = *array;

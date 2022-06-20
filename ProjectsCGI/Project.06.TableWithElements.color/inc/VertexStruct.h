@@ -8,6 +8,7 @@
 struct Vertex {
     Vector3f pos;
     Vector3f color;
+    Vector3f normal;
 
     Vertex() {}
 
